@@ -1,15 +1,18 @@
 package smartbuffer;
 
-import java.util.*;
-
-import com.google.common.collect.Multimap;
+import com.google.common.collect.SetMultimap;
 import util.ObjectVN;
+
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 public class NumLinkBuffer implements SmartBuffer {
     /*
      * A map from the object to transaction IDs that depend on the object
      */
-    private Multimap<ObjectVN, Long> depsMap;
+    private SetMultimap<ObjectVN, Long> depsMap;
 
     /*
      * A map from a transaction ID to the number of unresolved dependencies
