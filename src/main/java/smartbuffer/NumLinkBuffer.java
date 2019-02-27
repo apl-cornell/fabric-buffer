@@ -1,5 +1,6 @@
 package smartbuffer;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import util.ObjectVN;
 
@@ -18,6 +19,13 @@ public class NumLinkBuffer implements SmartBuffer {
      * A map from a transaction ID to the number of unresolved dependencies
      */
     private HashMap<Long, Integer> numLink;
+
+    public NumLinkBuffer() {
+        // TODO: decide the implementation we want to use
+        // Look at performance considerations, as well as whether we care about value ordering or not
+        depsMap = new HashMultimap<>();
+        numLink = new HashMap<>();
+    }
 
     @Override
     public boolean add(long tid, Set<ObjectVN> deps) {

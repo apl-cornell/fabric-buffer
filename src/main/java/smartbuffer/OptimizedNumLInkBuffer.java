@@ -1,5 +1,6 @@
 package smartbuffer;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import util.ObjectVN;
 
@@ -23,6 +24,12 @@ public class OptimizedNumLInkBuffer implements SmartBuffer {
      * A map from the object ID to the latest version number that the buffer ever seen
      */
     private HashMap<Long, Long> lastversion;
+
+    public OptimizedNumLInkBuffer() {
+        depsMap = new HashMultimap<>();
+        numLink = new HashMap<>();
+        lastversion = new HashMap<>();
+    }
 
     @Override
     public boolean add(long tid, Set<ObjectVN> deps) {
