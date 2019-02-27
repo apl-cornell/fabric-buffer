@@ -1,4 +1,5 @@
 package smartbuffer;
 
-public class SmartBuffer {
+public interface SmartBuffer {
+    // TODO: add method specs
 }
