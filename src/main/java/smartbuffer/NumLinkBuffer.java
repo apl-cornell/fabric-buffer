@@ -2,13 +2,14 @@ package smartbuffer;
 
 import java.util.*;
 
+import com.google.common.collect.Multimap;
 import util.ObjectVN;
 
 public class NumLinkBuffer implements SmartBuffer {
     /*
      * A map from the object to transaction IDs that depend on the object
      */
-    private HashMap<ObjectVN, Set<Long>> depsMap;
+    private Multimap<ObjectVN, Long> depsMap;
 
     /*
      * A map from a transaction ID to the number of unresolved dependencies
@@ -21,9 +22,7 @@ public class NumLinkBuffer implements SmartBuffer {
             if (depsMap.containsKey(object)){
                 depsMap.get(object).add(tid);
             } else {
-                Set<Long> l = new HashSet<Long>();
-                l.add(tid);
-                depsMap.put(object, l);
+                depsMap.put(object, tid);
             }
         }
         numLink.put(tid, deps.size());
@@ -41,7 +40,7 @@ public class NumLinkBuffer implements SmartBuffer {
                 }
             }
         }
-        depsMap.remove(object);
+        depsMap.removeAll(object);
         return translist;
     }
 
@@ -54,7 +53,7 @@ public class NumLinkBuffer implements SmartBuffer {
                     translist.add(tid);
                     numLink.remove(tid);
                 }
-                depsMap.remove(object_curr);
+                depsMap.removeAll(object_curr);
             }
         }
         return translist;
