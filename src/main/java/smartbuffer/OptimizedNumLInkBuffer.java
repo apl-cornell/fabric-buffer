@@ -6,17 +6,17 @@ import util.ObjectVN;
 
 public class OptimizedNumLInkBuffer implements SmartBuffer {
     /*
-     * A map from object to transactions that depend on the object
+     * A map from the object to transaction IDs that depend on the object
      */
     private HashMap<ObjectVN, Set<Long>> depsMap;
 
     /*
-     * A map from a transaction to the number of unremoved deps
+     * A map from a transaction ID to the number of unresolved dependencies
      */
     private HashMap<Long, Integer> numLink;
 
     /*
-     * A map from oid to the latest vnum that the buffer ever seen
+     * A map from the object ID to the latest version number that the buffer ever seen
      */
     private HashMap<Long, Long> lastversion;
 
