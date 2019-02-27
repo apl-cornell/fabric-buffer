@@ -16,7 +16,7 @@ public class NumLinkBuffer implements SmartBuffer {
 	public HashMap<Long, Integer> numLink;
 
 	@Override
-	public void add(long tid, Set<ObjectVN> deps) {
+	public boolean add(long tid, Set<ObjectVN> deps) {
 		for (ObjectVN object : deps) {
 			if (depsMap.containsKey(object)){
 				depsMap.get(object).add(tid);
@@ -27,6 +27,7 @@ public class NumLinkBuffer implements SmartBuffer {
 			}
 		}
 		numLink.put(tid, deps.size());
+		return true;
 	}
 
 	@Override

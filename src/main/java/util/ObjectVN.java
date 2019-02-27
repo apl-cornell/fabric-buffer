@@ -11,7 +11,7 @@ public class ObjectVN {
 	 */
 	public long vnum;
 	
-	ObjectVN(long oid, long vnum){
+	public ObjectVN(long oid, long vnum){
 		this.oid = oid;
 		this.vnum = vnum;
 	}
