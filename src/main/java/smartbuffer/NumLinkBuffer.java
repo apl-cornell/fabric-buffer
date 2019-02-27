@@ -8,12 +8,12 @@ public class NumLinkBuffer implements SmartBuffer {
     /*
      * A map from object to transactions that depend on the object
      */
-    public HashMap<ObjectVN, Set<Long>> depsMap;
+    private HashMap<ObjectVN, Set<Long>> depsMap;
 
     /*
      * A map from a transaction to the number of unremoved deps
      */
-    public HashMap<Long, Integer> numLink;
+    private HashMap<Long, Integer> numLink;
 
     @Override
     public boolean add(long tid, Set<ObjectVN> deps) {
