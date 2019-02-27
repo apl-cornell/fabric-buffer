@@ -21,4 +21,9 @@ public interface SmartBuffer {
      * Return a list of transactions ejected.
      */
     List<Long> eject(ObjectVN object);
+    
+    /*
+     * Remove transaction [tid] from the buffer.
+     */
+    void delete(long tid);
 }

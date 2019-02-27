@@ -69,5 +69,10 @@ public class NumLinkBuffer implements SmartBuffer {
         }
         return translist;
     }
+    
+    @Override
+    public void delete(long tid) {
+        numLink.remove(tid);
+    }
 
 }

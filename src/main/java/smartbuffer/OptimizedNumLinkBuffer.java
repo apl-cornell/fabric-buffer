@@ -9,7 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-public class OptimizedNumLInkBuffer implements SmartBuffer {
+public class OptimizedNumLinkBuffer implements SmartBuffer {
     /*
      * A map from the object to transaction IDs that depend on the object
      */
@@ -25,7 +25,7 @@ public class OptimizedNumLInkBuffer implements SmartBuffer {
      */
     private HashMap<Long, Long> lastversion;
 
-    public OptimizedNumLInkBuffer() {
+    public OptimizedNumLinkBuffer() {
         depsMap = new HashMultimap<>();
         numLink = new HashMap<>();
         lastversion = new HashMap<>();
@@ -36,11 +36,7 @@ public class OptimizedNumLInkBuffer implements SmartBuffer {
         for (ObjectVN object : deps) {
             // If the store has seen this version of object
             if (lastversion.containsKey(object.oid) && object.vnum == lastversion.get(object.oid)) {
-                if (depsMap.containsKey(object)) {
-                    depsMap.get(object).add(tid);
-                } else {
-                    depsMap.put(object, tid);
-                }
+                depsMap.put(object, tid);
             // If this version of object is newer than the version the buffer has seen
             } else if (lastversion.containsKey(object.oid) && object.vnum > lastversion.get(object.oid)) {
                 lastversion.put(object.oid, object.vnum);
@@ -92,6 +88,11 @@ public class OptimizedNumLInkBuffer implements SmartBuffer {
             depsMap.removeAll(last);
         }
         return translist;
+    }
+    
+    @Override
+    public void delete(long tid) {
+        numLink.remove(tid);
     }
 
 }
