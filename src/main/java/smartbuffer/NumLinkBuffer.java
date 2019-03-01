@@ -28,12 +28,11 @@ public class NumLinkBuffer implements SmartBuffer {
     }
 
     @Override
-    public boolean add(long tid, Set<ObjectVN> deps) {
+    public void add(long tid, Set<ObjectVN> deps) {
         for (ObjectVN object : deps) {
             depsMap.put(object, tid);
         }
         numLink.put(tid, deps.size());
-        return true;
     }
 
     @Override

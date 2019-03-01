@@ -3,6 +3,7 @@ package smartbuffer;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import util.ObjectVN;
+import util.Store;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -21,37 +22,28 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
     private HashMap<Long, Integer> numLink;
 
     /*
-     * A map from the object ID to the latest version number that the buffer ever seen
+     * A map from the object ID to the version number of the object in the buffer.
      */
-    private HashMap<Long, Long> lastversion;
+    private HashMap<Long, Long> inbufferversion;
+    
+    /*
+     * A pointer to the store that the buffer is associated with.
+     */
+    public Store store;
 
     public OptimizedNumLinkBuffer() {
         depsMap = new HashMultimap<>();
         numLink = new HashMap<>();
-        lastversion = new HashMap<>();
+        inbufferversion = new HashMap<>();
     }
 
     @Override
-    public boolean add(long tid, Set<ObjectVN> deps) {
+    public void add(long tid, Set<ObjectVN> deps) {
         for (ObjectVN object : deps) {
-            // If the store has seen this version of object
-            if (lastversion.containsKey(object.oid) && object.vnum == lastversion.get(object.oid)) {
-                depsMap.put(object, tid);
-            // If this version of object is newer than the version the buffer has seen
-            } else if (lastversion.containsKey(object.oid) && object.vnum > lastversion.get(object.oid)) {
-                lastversion.put(object.oid, object.vnum);
-                // Eject transactions depend on the last version?
-                // eject(object);
-                depsMap.put(object, tid);
-            } else if (lastversion.containsKey(object.oid) && object.vnum < lastversion.get(object.oid)) {
-                return false;
-            } else {
-                lastversion.put(object.oid, object.vnum);
-                depsMap.put(object, tid);
-            }
+            inbufferversion.put(object.oid, object.vnum);
+            depsMap.put(object, tid);
         }
         numLink.put(tid, deps.size());
-        return true;
     }
 
     @Override
@@ -77,8 +69,8 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
     @Override
     public List<Long> eject(ObjectVN object) {
         List<Long> translist = new LinkedList<Long>();
-        if (lastversion.containsKey(object.oid) && object.vnum > lastversion.get(object.oid)) {
-            ObjectVN last = new ObjectVN(object.oid, lastversion.get(object.oid));
+        if (inbufferversion.containsKey(object.oid) && object.vnum > inbufferversion.get(object.oid)) {
+            ObjectVN last = new ObjectVN(object.oid, inbufferversion.get(object.oid));
             for (long tid : depsMap.get(last)) {
                 if (numLink.containsKey(tid)) {
                     translist.add(tid);
