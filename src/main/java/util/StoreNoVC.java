@@ -14,7 +14,7 @@ public class StoreNoVC implements Store {
     /*
      * A map from [tid] to transactions in the buffer waiting for processing.
      */
-    public HashMap<Long, List<ObjectVN>> pending;
+    public HashMap<Long, Set<ObjectVN>> pending;
     
     public StoreNoVC(SmartBuffer buffer) {
         this.buffer = buffer;
@@ -22,14 +22,14 @@ public class StoreNoVC implements Store {
         this.pending = new HashMap<>();
     }
     
-    public void prepare(long tid, List<ObjectVN> write, List<ObjectVN> deps) {
-        pending.put(tid, write);
+    public boolean prepare(long tid, Set<ObjectVN> reads, Set<ObjectVN> writes) {
+        pending.put(tid, writes);
     	boolean depsfulfilled = true;
-        Set<ObjectVN> actualdeps = depscheck(deps);
+        Set<ObjectVN> actualdeps = depscheck(reads);
         
         if (!depsfulfilled) {
             buffer.add(tid, actualdeps);
-            actualdeps = depscheck(deps);
+            actualdeps = depscheck(reads);
             if (actualdeps.size() == 0) {
             	commit(tid);
             	buffer.delete(tid);
@@ -37,12 +37,14 @@ public class StoreNoVC implements Store {
         } else {
             commit(tid);
     	}
+        
+        return true;
     }
     
     /*
      * Return a set of unresolved dependencies.
      */
-    public Set<ObjectVN> depscheck(List<ObjectVN> deps) {
+    public Set<ObjectVN> depscheck(Set<ObjectVN> deps) {
         Set<ObjectVN> actualdeps = new HashSet<>();
         for (ObjectVN object : deps) {
             if (lastversion.get(object.oid) < object.vnum) {
