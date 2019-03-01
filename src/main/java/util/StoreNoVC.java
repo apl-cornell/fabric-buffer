@@ -1,6 +1,11 @@
 package util;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
+
+import com.google.common.collect.SetMultimap;
+
 import smartbuffer.SmartBuffer;
 
 public class StoreNoVC implements Store {
@@ -12,33 +17,51 @@ public class StoreNoVC implements Store {
     public HashMap<Long, Long> lastversion;
     
     /*
-     * A map from [tid] to transactions in the buffer waiting for processing.
+     * A map from [tid] to transactions in waiting for processing.
      */
-    public HashMap<Long, Set<ObjectVN>> pending;
+    public SetMultimap<Long, ObjectVN> pending;
     
     public StoreNoVC(SmartBuffer buffer) {
         this.buffer = buffer;
         this.lastversion = new HashMap<>();
-        this.pending = new HashMap<>();
+        this.pending = new SetMultimap<>();
     }
     
-    public boolean prepare(long tid, Set<ObjectVN> reads, Set<ObjectVN> writes) {
-        pending.put(tid, writes);
-    	boolean depsfulfilled = true;
-        Set<ObjectVN> actualdeps = depscheck(reads);
+    public Future<Boolean> prepare(long tid, Set<ObjectVN> reads, Set<ObjectVN> writes) {
+        // Check version conflict
+        Set<ObjectVN> actualdeps = new HashSet<>();
         
-        if (!depsfulfilled) {
-            buffer.add(tid, actualdeps);
-            actualdeps = depscheck(reads);
-            if (actualdeps.size() == 0) {
-            	commit(tid);
-            	buffer.delete(tid);
+        for (ObjectVN object : reads) {
+            // if there is a older version, there is a version conflict and prepare fails.
+            if (object.vnum < lastversion.get(object.oid)) {
+                return futurewith(false);
+            // if there is a version that's never seen, add that to the dependency of this transaction
+            } else if (object.vnum > lastversion.get(object.oid)) {
+                actualdeps.add(object);
             }
-        } else {
-            commit(tid);
-    	}
+        }
         
-        return true;
+        pending.putAll(tid, writes);
+        if (actualdeps.isEmpty()) {
+            // TODO Grab the lock on the store's side
+            
+            // TODO Change the state of [tid] to Prepared
+            
+            return futurewith(true);
+        } else {
+            // Result resolved to true if the dependencies of [tid] are resolved. resolved to false only when there is version conflict
+            Future<Boolean> result = buffer.add(tid, actualdeps);
+            // Double check the dependency to avoid the case that dependencies are resolved concurrently.
+            actualdeps = depscheck(reads);
+            if (actualdeps.isEmpty()) {
+                buffer.delete(tid);
+                // Grab the lock and change the state of [tid]
+                
+                return futurewith(true);
+            } else {
+                return result;
+            }
+        }
     }
     
     /*
@@ -70,6 +93,10 @@ public class StoreNoVC implements Store {
 	public void abort(long tid) {
 		// TODO Auto-generated method stub
 		
+	}
+	
+	private <T> Future<T> futurewith(T value){
+	    return CompletableFuture.completedFuture(value);
 	}
 
 }

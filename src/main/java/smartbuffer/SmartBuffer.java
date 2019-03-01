@@ -1,6 +1,11 @@
 package smartbuffer;
 
 import java.util.*;
+import java.util.concurrent.Future;
+
+import com.google.common.base.Function;
+import java.util.function.Supplier;
+
 import util.ObjectVN;
 
 public interface SmartBuffer {
@@ -8,7 +13,7 @@ public interface SmartBuffer {
      * Add transaction [tid] that depends on objects in [deps] to the buffer
      * Return true if the add is success.
      */
-    void add(long tid, Set<ObjectVN> deps);
+    Future<Boolean> add(long tid, Set<ObjectVN> deps);
 
     /*
      * Remove [object] from the deps of transactions depend on [oid].

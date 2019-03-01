@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Future;
 
 public class NumLinkBuffer implements SmartBuffer {
     /*
@@ -19,7 +20,13 @@ public class NumLinkBuffer implements SmartBuffer {
      * A map from a transaction ID to the number of unresolved dependencies
      */
     private HashMap<Long, Integer> numLink;
-
+    
+    // map from TIDs to the futures that should resolve when all dependencies are met for that transaction
+    private HashMap<Long, Future<Boolean>> futures;
+    
+    // TODO Lock for each transaction
+    
+    
     public NumLinkBuffer() {
         // TODO: decide the implementation we want to use
         // Look at performance considerations, as well as whether we care about value ordering or not
@@ -28,7 +35,8 @@ public class NumLinkBuffer implements SmartBuffer {
     }
 
     @Override
-    public void add(long tid, Set<ObjectVN> deps) {
+    public Future<Boolean> add(long tid, Set<ObjectVN> deps) {
+        Future<Boolean> future = 
         for (ObjectVN object : deps) {
             depsMap.put(object, tid);
         }

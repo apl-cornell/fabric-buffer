@@ -58,6 +58,8 @@ public class Txn {
             }
             for (Future<Boolean> result : results) {
                 try {
+                    // if the prepare failed, abort this transaction
+                    // TODO look for method to handle list of futures like Promise.all in javascript
                     if (!result.get()) {
                         abort();
                         break;
@@ -70,6 +72,7 @@ public class Txn {
         } else {
             for (Store s : Sets.union(reads.keySet(), writes.keySet())) {
                 boolean result = s.prepare(tid, reads.get(s), writes.get(s));
+                // if the prepare failed, abort this transaction
                 if (!result) {
                     abort();
                     break;
