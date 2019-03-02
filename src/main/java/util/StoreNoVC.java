@@ -21,6 +21,11 @@ public class StoreNoVC implements Store {
      */
     public SetMultimap<Long, ObjectVN> pending;
     
+    /*
+     * A map from transactions in the buffer to associated futures to be filled.
+     */
+    public HashMap<Long, Future<Boolean>> futures;
+    
     public StoreNoVC(SmartBuffer buffer) {
         this.buffer = buffer;
         this.lastversion = new HashMap<>();
@@ -50,7 +55,7 @@ public class StoreNoVC implements Store {
             return futurewith(true);
         } else {
             // Result resolved to true if the dependencies of [tid] are resolved. resolved to false only when there is version conflict
-            Future<Boolean> result = buffer.add(tid, actualdeps);
+            buffer.add(tid, actualdeps);
             // Double check the dependency to avoid the case that dependencies are resolved concurrently.
             actualdeps = depscheck(reads);
             if (actualdeps.isEmpty()) {
@@ -59,6 +64,10 @@ public class StoreNoVC implements Store {
                 
                 return futurewith(true);
             } else {
+                // Add a result to be filled to the futures. 
+                // Resolve [result] when the transaction is prepared successfully or ejected because of version conflict
+                Future<Boolean> result = new CompletableFuture<>();
+                futures.put(tid, result);
                 return result;
             }
         }

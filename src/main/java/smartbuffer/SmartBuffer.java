@@ -13,7 +13,7 @@ public interface SmartBuffer {
      * Add transaction [tid] that depends on objects in [deps] to the buffer
      * Return true if the add is success.
      */
-    Future<Boolean> add(long tid, Set<ObjectVN> deps);
+    void add(long tid, Set<ObjectVN> deps);
 
     /*
      * Remove [object] from the deps of transactions depend on [oid].

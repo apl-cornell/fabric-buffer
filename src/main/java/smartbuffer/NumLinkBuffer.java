@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 public class NumLinkBuffer implements SmartBuffer {
@@ -35,8 +36,7 @@ public class NumLinkBuffer implements SmartBuffer {
     }
 
     @Override
-    public Future<Boolean> add(long tid, Set<ObjectVN> deps) {
-        Future<Boolean> future = 
+    public void add(long tid, Set<ObjectVN> deps) {
         for (ObjectVN object : deps) {
             depsMap.put(object, tid);
         }
