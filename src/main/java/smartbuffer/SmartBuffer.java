@@ -10,10 +10,10 @@ import util.ObjectVN;
 
 public interface SmartBuffer {
     /*
-     * Add transaction [tid] that depends on objects in [deps] to the buffer
+     * Add transaction [tid] that depends on objects in [acutaldeps] (not resolved) and [resolveddeps] (resolved) to the buffer
      * Return true if the add is success.
      */
-    void add(long tid, Set<ObjectVN> deps);
+    void add(long tid, Set<ObjectVN> actualdeps, Set<ObjectVN> resolveddeps);
 
     /*
      * Remove [object] from the deps of transactions depend on [oid].

@@ -46,10 +46,10 @@ public class NumLinkBuffer implements SmartBuffer {
     }
 
     @Override
-    public void add(long tid, Set<ObjectVN> deps) {
+    public void add(long tid, Set<ObjectVN> actualdeps, Set<ObjectVN> resolveddeps) {
         txnlocktable.put(tid, new ReentrantLock());
         synchronized(txnlocktable.get(tid)){
-            for (ObjectVN object : deps) {
+            for (ObjectVN object : actualdeps) {
                 if (!deplocktable.containsKey(object)) {
                     deplocktable.put(object, new ReentrantLock());
                 }
@@ -58,7 +58,7 @@ public class NumLinkBuffer implements SmartBuffer {
                     depsMap.put(object, tid);
                 }
             }
-            numLink.put(tid, deps.size());
+            numLink.put(tid, actualdeps.size());
         }
     }
 

@@ -27,6 +27,11 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
     private HashMap<Long, Long> inbufferversion;
     
     /*
+     * 
+     */
+    private SetMultimap<Long, ObjectVN> unresolveddeps;
+    
+    /*
      * A pointer to the store that the buffer is associated with.
      */
     public Store store;
@@ -38,12 +43,17 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
     }
 
     @Override
-    public void add(long tid, Set<ObjectVN> deps) {
-        for (ObjectVN object : deps) {
+    public void add(long tid, Set<ObjectVN> actualdeps, Set<ObjectVN> resolveddeps) {
+        for (ObjectVN object : actualdeps) {
+            inbufferversion.put(object.oid, object.vnum);
+            depsMap.put(object, tid);
+            unresolveddeps.put(tid, object);
+        }
+        for (ObjectVN object : resolveddeps) {
             inbufferversion.put(object.oid, object.vnum);
             depsMap.put(object, tid);
         }
-        numLink.put(tid, deps.size());
+        numLink.put(tid, actualdeps.size());
     }
 
     @Override
@@ -51,7 +61,7 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
         List<Long> translist = new LinkedList<Long>();
         boolean allremoved = true;
         for (long tid : depsMap.get(object)) {
-            if (numLink.containsKey(tid)) {
+            if (numLink.containsKey(tid) && unresolveddeps.get(tid).contains(object)) {
                 numLink.put(tid, numLink.get(tid) - 1);
                 if (numLink.get(tid) == 0) {
                     translist.add(tid);
