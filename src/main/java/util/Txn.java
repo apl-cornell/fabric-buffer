@@ -48,7 +48,10 @@ public class Txn {
     
     public void prepare() {
         // Acquire lock on the worker's side
-        
+        if (!worker.grablock(reads.values(), writes.values())) {
+            worker.releaselock(reads.values(), writes.values());
+            return;
+        }
         // Submit transaction to each store
         if (TxnConcurrent) {
             List<Future<Future<Boolean>>> futures = new LinkedList<>();
@@ -71,7 +74,6 @@ public class Txn {
             for (Future<Boolean> result : results) {
                 try {
                     // if the prepare failed, abort this transaction
-                    // TODO look for method to handle list of futures like Promise.all in javascript
                     if (!result.get()) {
                         abort();
                         return;
@@ -101,16 +103,13 @@ public class Txn {
     
     public void abort() {
         //Release lock on the worker's side
-        
-        
+        worker.releaselock(reads.values(), writes.values());        
     }
     
     public void commit() {
-        for (ObjectVN object : writes.values()) {
-            worker.update(object);
-        }
+        worker.update(writes.values());
         //Release lock on the worker's side
-        
+        worker.releaselock(reads.values(), writes.values());
         for (Store s :  Sets.union(reads.keySet(), writes.keySet())){
             Callable<Void> c = () -> {s.commit(tid);return null;};
             pool.submit(c);
