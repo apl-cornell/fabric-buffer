@@ -8,7 +8,7 @@ import com.google.common.collect.SetMultimap;
 
 import smartbuffer.SmartBuffer;
 
-public class StoreNoVC implements Store {
+public class StoreSB implements Store {
     public SmartBuffer buffer;
     
     /*
@@ -17,21 +17,28 @@ public class StoreNoVC implements Store {
     public HashMap<Long, Long> lastversion;
     
     /*
-     * A map from [tid] to transactions in waiting for processing.
+     * A map from [tid] to objects that transaction writes for transactions waiting for processing.
      */
     public SetMultimap<Long, ObjectVN> pending;
     
     /*
+     * A map from [tid] to objects that transaction reads for transactions waiting for processing.
+     */
+    public SetMultimap<Long, ObjectVN> pendingread;
+    
+    /*
      * A map from transactions in the buffer to associated futures to be filled.
      */
-    public HashMap<Long, Future<Boolean>> futures;
+    public HashMap<Long, CompletableFuture<Boolean>> futures;
     
-    public StoreNoVC(SmartBuffer buffer) {
+    public StoreSB(SmartBuffer buffer) {
         this.buffer = buffer;
         this.lastversion = new HashMap<>();
         this.pending = new SetMultimap<>();
+        this.pendingread = new SetMultimap<>();
     }
     
+    @Override
     public Future<Boolean> prepare(long tid, Set<ObjectVN> reads, Set<ObjectVN> writes) {
         // Check version conflict
         Set<ObjectVN> actualdeps = new HashSet<>();
@@ -66,7 +73,7 @@ public class StoreNoVC implements Store {
             } else {
                 // Add a result to be filled to the futures. 
                 // Resolve [result] when the transaction is prepared successfully or ejected because of version conflict
-                Future<Boolean> result = new CompletableFuture<>();
+                CompletableFuture<Boolean> result = new CompletableFuture<>();
                 futures.put(tid, result);
                 return result;
             }
@@ -86,21 +93,44 @@ public class StoreNoVC implements Store {
         return actualdeps;
     }
     
+    @Override
     public void commit(long tid) {
     	for (ObjectVN object : pending.get(tid)) {
     	    lastversion.put(object.oid, object.vnum);
-    	    buffer.eject(object);
+    	    //Remove object from the buffer
     	    List<Long> translist = buffer.remove(object);
+            //Prepare objects that have all dependencies removed
     	    for (long tid1 : translist) {
-    	        commit(tid1);
+    	        //Check version conflict
+    	        boolean novc = true;
+    	        for (ObjectVN read : pendingread.get(tid1)) {
+    	            if (novc && read.vnum < lastversion.get(read.oid)) {
+    	                futures.get(tid1).complete(false);
+    	                novc = false;
+    	            }
+    	        }
+    	        if (novc) {
+    	            futures.get(tid1).complete(true);
+    	        }
+    	        futures.remove(tid1);
     	    }
+    	    //Abort transactions with version conflict to this commit
+    	    List<Long> ejectlist = buffer.eject(object);
+    	    for (long tid1 : ejectlist) {
+    	        abort(tid1);
+    	    }
+    	    
     	}
-    	pending.remove(tid);
+    	pending.removeAll(tid);
     }
 
 	@Override
 	public void abort(long tid) {
-		// TODO Auto-generated method stub
+		pending.removeAll(tid);
+		if (futures.containsKey(tid)) {
+		    futures.get(tid).complete(false);
+		    futures.remove(tid);
+		}
 		
 	}
 	
