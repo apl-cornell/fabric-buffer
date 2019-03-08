@@ -14,9 +14,6 @@ public interface SmartBuffer {
      * version conflict. A transaction is viewed as resolved if all of its
      * dependencies are resolved.
      *
-     * Note that if a transaction is deleted from the buffer before its
-     * corresponding future resolves, the future will never resolve.
-     *
      * @param tid The ID of the transaction.
      * @param deps A set of <i>all</i> of the transaction's dependencies. It is 
      *             important that resolved dependencies are also included, since 
@@ -28,7 +25,9 @@ public interface SmartBuffer {
 
     /**
      * Remove a dependency from the dependencies of any transactions that rely 
-     * on it.
+     * on it. Any transactions that have no unresolved dependencies after this
+     * will have their corresponding futures resolved with {@code true} if any
+     * required locks can be successfully grabbed, and {@code false} otherwise.
      *
      * @param object The dependency.
      */
@@ -36,15 +35,17 @@ public interface SmartBuffer {
 
     /**
      * Eject transactions that have a version conflict with a given dependency. 
-     * These transactions will be dropped.
+     * These transactions will be dropped, and their corresponding futures will
+     * resolve with {@code false}.
      *
      * @param object The dependency.
      */
     void eject(ObjectVN object);
 
     /**
-     * Remove a transaction from the buffer. Note that this will prevent the 
-     * future that was returned from adding the transaction from ever resolving.
+     * Remove a transaction from the buffer. Note that this will make the
+     * future that was returned from adding the transaction resolve with
+     * {@code false}.
      *
      * @param tid The ID of the transaction.
      */

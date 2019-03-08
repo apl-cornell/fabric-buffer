@@ -163,7 +163,7 @@ public class NumLinkBuffer implements SmartBuffer {
     public void delete(long tid) {
         synchronized (getTxnLock(tid)) {
             numLink.remove(tid);
-            futures.remove(tid);
+            futures.remove(tid).complete(false);
         }
     }
 
