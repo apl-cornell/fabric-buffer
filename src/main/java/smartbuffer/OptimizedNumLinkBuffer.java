@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Future;
 
 public class OptimizedNumLinkBuffer implements SmartBuffer {
     /*
@@ -43,7 +44,7 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
     }
 
     @Override
-    public void add(long tid, Set<ObjectVN> actualdeps, Set<ObjectVN> resolveddeps) {
+    public Future<Boolean> add(long tid, Set<ObjectVN> deps) {
         for (ObjectVN object : actualdeps) {
             inbufferversion.put(object.oid, object.vnum);
             depsMap.put(object, tid);
@@ -57,7 +58,7 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
     }
 
     @Override
-    public List<Long> remove(ObjectVN object) {
+    public void remove(ObjectVN object) {
         List<Long> translist = new LinkedList<Long>();
         boolean allremoved = true;
         for (long tid : depsMap.get(object)) {
@@ -73,11 +74,10 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
         if (allremoved) {
             depsMap.removeAll(object);
         }
-        return translist;
     }
 
     @Override
-    public List<Long> eject(ObjectVN object) {
+    public void eject(ObjectVN object) {
         List<Long> translist = new LinkedList<Long>();
         if (inbufferversion.containsKey(object.oid) && object.vnum > inbufferversion.get(object.oid)) {
             ObjectVN last = new ObjectVN(object.oid, inbufferversion.get(object.oid));
@@ -89,7 +89,6 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
             }
             depsMap.removeAll(last);
         }
-        return translist;
     }
     
     @Override
