@@ -33,6 +33,12 @@ public class StoreSB implements Store {
      */
     private ObjectLockTable locktable;
 
+    /**
+     * Create a new instance of this class.
+     *
+     * @param buffer A buffer to use for transactions with pending dependencies.
+     *               This should be an empty buffer.
+     */
     public StoreSB(SmartBuffer buffer) {
         this.buffer = buffer;
         this.lastversion = new HashMap<>();
@@ -64,19 +70,6 @@ public class StoreSB implements Store {
             // Result resolved to true if the dependencies of [tid] are resolved. resolved to false only when there is version conflict
             return buffer.add(tid, reads);
         }
-    }
-
-    /*
-     * Return a set of unresolved dependencies.
-     */
-    public Set<ObjectVN> depscheck(Set<ObjectVN> deps) {
-        Set<ObjectVN> actualdeps = new HashSet<>();
-        for (ObjectVN object : deps) {
-            if (lastversion.get(object.oid) < object.vnum) {
-                actualdeps.add(object);
-            }
-        }
-        return actualdeps;
     }
 
     @Override

@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import util.ObjectLock;
 
+// TODO: write a javadoc for this class
 public class ObjectLockTable {
     /*
      * A map from [oid] to the associated ObjectLock

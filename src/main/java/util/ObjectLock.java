@@ -3,23 +3,24 @@ package util;
 import java.util.HashSet;
 import java.util.Set;
 
+// TODO: write a javadoc for this class
 public class ObjectLock {
     /*
      * [oid] of the object that this lock is associated with.
      */
-    Long oid;
+    private Long oid;
     
     /*
      * [tid] of the transaction that holds the write lock.
      * [null] if no transaction holds the write lock.
      */
-    Long writelockholder;
+    private Long writelockholder;
     
     /*
      * A list of [tid] of all transactions that hold the read lock.
      * The list is empty if no transaction holds the read lock.
      */
-    Set<Long> readlockholder;
+    private Set<Long> readlockholder;
     
     public ObjectLock(Long oid) {
         this.oid = oid;
@@ -82,6 +83,4 @@ public class ObjectLock {
             this.writelockholder = null;
         }
     }
-    
-
 }
