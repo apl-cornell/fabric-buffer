@@ -1,9 +1,7 @@
 package util;
 
-import java.util.*;
+import java.util.Set;
 import java.util.concurrent.Future;
-
-import util.ObjectVN;
 
 public interface Store {
     /**
@@ -44,10 +42,7 @@ public interface Store {
      * @return The version number of the object.
      */
     Long getversion(long oid);
-    
-    /*
-     * Grab the locks for transaction [tid];
-     */
+
     /**
      * Grab the lock for objects that a transaction reads and writes on the 
      * store's side. Return {@code true} iff all the locks are successfully 
