@@ -14,7 +14,7 @@ public interface SmartBuffer {
      * Add transaction [tid] that depends on objects in [acutaldeps] (not resolved) and [resolveddeps] (resolved) to the buffer
      * Return true if the add is success.
      */
-    void add(long tid, Set<ObjectVN> deps, CompletableFuture<Boolean> future);
+    Future<Boolean> add(long tid, Set<ObjectVN> deps);
 
     /*
      * Remove [object] from the deps of transactions depend on [oid].
