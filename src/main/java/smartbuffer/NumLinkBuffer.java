@@ -81,24 +81,32 @@ public class NumLinkBuffer implements SmartBuffer {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         synchronized (getTxnLock(tid)) {
             numLink.put(tid, 0);
-            for (ObjectVN object : deps) {
-                synchronized (getObjLock(object.oid)) {
-                    if (store.getversion(object.oid) > object.vnum) {
-                        //Version Conflict
-                        future.complete(false);
-                    } else if (store.getversion(object.oid) < object.vnum) {
-                        unresolveddepsMap.put(object, tid);
-                        depsMap.put(object, tid);
-                        numLink.put(tid, numLink.get(tid) + 1);
-                    } else {
-                        depsMap.put(object, tid);
+        }
+        for (ObjectVN object : deps) {
+            synchronized (getObjLock(object.oid)) {
+                if (store.getversion(object.oid) > object.vnum) {
+                    //Version Conflict
+                    future.complete(false);
+                } else if (store.getversion(object.oid) < object.vnum) {
+                    unresolveddepsMap.put(object, tid);
+                    depsMap.put(object, tid);
+                    synchronized (getTxnLock(tid)) {
+                        //if the transaction is not aborted
+                        if (numLink.containsKey(tid)) {
+                            numLink.put(tid, numLink.get(tid) + 1);
+                        }
                     }
+                } else {
+                    depsMap.put(object, tid);
                 }
             }
-            if (numLink.get(tid) == 0) {
-                numLink.remove(tid);
-                future.complete(store.grabLock(tid));
-                futures.remove(tid);
+        }
+        synchronized (getTxnLock(tid)) {
+            if (numLink.containsKey(tid)) {
+                if (numLink.get(tid) == 0) {
+                    numLink.remove(tid);
+                    future.complete(store.grabLock(tid));
+                }
             } else {
                 futures.put(tid, future);
             }
@@ -117,11 +125,11 @@ public class NumLinkBuffer implements SmartBuffer {
                     if (numLink.containsKey(tid)) {
                         synchronized (getTxnLock(tid)) {
                             numLink.put(tid, numLink.get(tid) - 1);
-                        }
-                        if (numLink.get(tid) == 0) {
-                            numLink.remove(tid);
-                            futures.get(tid).complete(store.grabLock(tid));
-                            futures.remove(tid);
+                            if (numLink.get(tid) == 0) {
+                                numLink.remove(tid);
+                                futures.get(tid).complete(store.grabLock(tid));
+                                futures.remove(tid);
+                            }
                         }
                     }
                 }
