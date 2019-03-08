@@ -94,6 +94,8 @@ public class NumLinkBuffer implements SmartBuffer {
                         //if the transaction is not aborted
                         if (numLink.containsKey(tid)) {
                             numLink.put(tid, numLink.get(tid) + 1);
+                        } else {
+                            break; // transaction has been aborted
                         }
                     }
                 } else {
