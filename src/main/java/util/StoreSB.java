@@ -11,6 +11,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import com.google.common.collect.SetMultimap;
 
 import smartbuffer.SmartBuffer;
+import util.ObjectLockTable;
 
 public class StoreSB implements Store {
     public SmartBuffer buffer;
@@ -36,22 +37,23 @@ public class StoreSB implements Store {
     public HashMap<Long, CompletableFuture<Boolean>> futures;
     
     /*
-     * A map from [oid] to RWlock.
+     * A locktable for object-level lock.
      */
-    public HashMap<Long, ReadWriteLock> locktable;
+    public ObjectLockTable locktable;
     
     public StoreSB(SmartBuffer buffer) {
         this.buffer = buffer;
         this.lastversion = new HashMap<>();
         this.pending = new SetMultimap<>();
         this.pendingread = new SetMultimap<>();
-        this.locktable = new HashMap<>();
+        this.locktable = new ObjectLockTable();
     }
     
     @Override
     public Future<Boolean> prepare(long tid, Set<ObjectVN> reads, Set<ObjectVN> writes) {
         // Check version conflict
         Set<ObjectVN> actualdeps = new HashSet<>();
+        Set<ObjectVN> resolveddeps = new HashSet<>();
         
         for (ObjectVN object : reads) {
             // if there is a older version, there is a version conflict and prepare fails.
@@ -60,32 +62,24 @@ public class StoreSB implements Store {
             // if there is a version that's never seen, add that to the dependency of this transaction
             } else if (object.vnum > lastversion.get(object.oid)) {
                 actualdeps.add(object);
+            } else {
+                resolveddeps.add(object);
             }
         }
         
         pending.putAll(tid, writes);
         if (actualdeps.isEmpty()) {
             // Grab the lock on the store's side
-            if (!grablock(reads,writes)) {
-                releaselock(reads,writes);
-                return futurewith(false);
-            } else {
-                return futurewith(true);
-            }  
+            return futurewith(locktable.grabLock(reads,writes,tid));
         } else {
             // Result resolved to true if the dependencies of [tid] are resolved. resolved to false only when there is version conflict
-            buffer.add(tid, actualdeps);
+            buffer.add(tid, actualdeps, resolveddeps);
             // Double check the dependency to avoid the case that dependencies are resolved concurrently.
             actualdeps = depscheck(reads);
             if (actualdeps.isEmpty()) {
                 buffer.delete(tid);
-             // Grab the lock on the store's side
-                if (!grablock(reads,writes)) {
-                    releaselock(reads,writes);
-                    return futurewith(false);
-                } else {
-                    return futurewith(true);
-                } 
+                // Grab the lock on the store's side
+                return futurewith(locktable.grabLock(reads, writes, tid));
             } else {
                 // Add a result to be filled to the futures. 
                 // Resolve [result] when the transaction is prepared successfully or ejected because of version conflict
@@ -114,7 +108,7 @@ public class StoreSB implements Store {
     	for (ObjectVN write : pending.get(tid)) {
     	    lastversion.put(write.oid, write.vnum);
     	    //Release Lock
-    	    releaselock(pendingread.get(tid), pending.get(tid));
+    	    locktable.releaseLock(pendingread.get(tid), pending.get(tid), tid);
     	    //Remove object from the buffer
     	    List<Long> translist = buffer.remove(write);
             //Prepare objects that have all dependencies removed
@@ -125,18 +119,14 @@ public class StoreSB implements Store {
     	            if (novc && read.vnum < lastversion.get(read.oid)) {
     	                futures.get(tid1).complete(false);
     	                novc = false;
+    	                break;
     	            }
     	        }
     	        if (novc) {
     	         // Grab the lock on the store's side
     	            Set<ObjectVN> reads = pendingread.get(tid1);
     	            Set<ObjectVN> writes = pending.get(tid1);
-    	            if (!grablock(reads, writes)) {
-    	                releaselock(reads,writes);
-    	                futures.get(tid1).complete(false);
-    	            } else {
-    	                futures.get(tid1).complete(true);
-    	            } 
+    	            futures.get(tid1).complete(locktable.grabLock(reads, writes, tid1));
     	        }
     	        futures.remove(tid1);
     	    }
@@ -163,34 +153,4 @@ public class StoreSB implements Store {
 	private <T> Future<T> futurewith(T value){
 	    return CompletableFuture.completedFuture(value);
 	}
-	
-	/*
-	 * Grab the lock for objects in reads and writes.
-	 */
-	private boolean grablock(Set<ObjectVN> reads, Set<ObjectVN> writes) {
-	    for (ObjectVN read : reads) {
-	        if (!locktable.get(read.oid).readLock().tryLock()) {
-	            return false;
-	        }
-	    }
-	    for (ObjectVN write : writes) {
-	        if (!locktable.get(write.oid).writeLock().tryLock()) {
-	            return false;
-	        }
-	    }
-	    return true;
-	}
-	
-	/*
-	 * Release the lock for objects in reads and writes.
-	 */
-	private void releaselock(Set<ObjectVN> reads, Set<ObjectVN> writes) {
-	    for (ObjectVN read : reads) {
-	        locktable.get(read.oid).readLock().unlock();
-	    }
-	    for (ObjectVN write : writes) {
-	        locktable.get(write.oid).writeLock().unlock();
-	    }
-	}
-
 }
