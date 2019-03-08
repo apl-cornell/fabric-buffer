@@ -95,7 +95,9 @@ public class NumLinkBuffer implements SmartBuffer {
                 }
             }
             if (numLink.get(tid) == 0) {
+                numLink.remove(tid);
                 future.complete(store.grabLock(tid));
+                futures.remove(tid);
             } else {
                 futures.put(tid, future);
             }
@@ -115,7 +117,9 @@ public class NumLinkBuffer implements SmartBuffer {
                             numLink.put(tid, numLink.get(tid) - 1);
                         }
                         if (numLink.get(tid) == 0) {
+                            numLink.remove(tid);
                             futures.get(tid).complete(store.grabLock(tid));
+                            futures.remove(tid);
                         }
                     }
                 }
@@ -133,6 +137,7 @@ public class NumLinkBuffer implements SmartBuffer {
                         synchronized(getTxnLock(tid)) {
                             numLink.remove(tid);
                             futures.get(tid).complete(false);
+                            futures.remove(tid);
                         }
                     }
                     depsMap.removeAll(object_curr);
@@ -146,6 +151,7 @@ public class NumLinkBuffer implements SmartBuffer {
     public void delete(long tid) {
         synchronized (getTxnLock(tid)) {
             numLink.remove(tid);
+            futures.remove(tid);
         }
     }
 
