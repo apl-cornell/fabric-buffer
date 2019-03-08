@@ -48,8 +48,10 @@ public class Txn {
     
     public void prepare() {
         // Acquire lock on the worker's side
-        if (!worker.grablock(reads.values(), writes.values())) {
-            worker.releaselock(reads.values(), writes.values());
+        Set<ObjectVN> readso = new HashSet<>(reads.values());
+        Set<ObjectVN> writeso = new HashSet<>(writes.values());
+        if (!worker.grablock(readso, writeso, tid)) {
+            worker.releaselock(readso, writeso, tid);
             return;
         }
         // Submit transaction to each store
@@ -103,13 +105,13 @@ public class Txn {
     
     public void abort() {
         //Release lock on the worker's side
-        worker.releaselock(reads.values(), writes.values());        
+        worker.releaselock(new HashSet<>(reads.values()), new HashSet<>(writes.values()), tid);        
     }
     
     public void commit() {
         worker.update(writes.values());
         //Release lock on the worker's side
-        worker.releaselock(reads.values(), writes.values());
+        worker.releaselock(new HashSet<>(reads.values()), new HashSet<>(writes.values()), tid);        
         for (Store s :  Sets.union(reads.keySet(), writes.keySet())){
             Callable<Void> c = () -> {s.commit(tid);return null;};
             pool.submit(c);
