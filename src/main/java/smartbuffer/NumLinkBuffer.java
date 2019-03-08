@@ -2,13 +2,17 @@ package smartbuffer;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
+
+import util.ObjectLock;
 import util.ObjectVN;
+import util.Store;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -19,6 +23,11 @@ public class NumLinkBuffer implements SmartBuffer {
      * A map from the object to transaction IDs that depend on the object.
      */
     private SetMultimap<ObjectVN, Long> depsMap;
+    
+    /*
+     * A map from the object to transaction IDS that depend on the object and that the dependency is not resolved.
+     */
+    private SetMultimap<ObjectVN, Long> unresolveddepsMap;
 
     /*
      * A map from a transaction ID to the number of unresolved dependencies.
@@ -26,14 +35,24 @@ public class NumLinkBuffer implements SmartBuffer {
     private HashMap<Long, Integer> numLink;
     
     /*
-     * A map from oid/vnum pair to the associated lock.
+     * A map from oid to the associated lock.
      */
-    private HashMap<ObjectVN, Lock> deplocktable;
+    private ConcurrentHashMap<Long, Lock> objlocktable;
     
     /*
      * A map from tid to the associated lock
      */
-    private HashMap<Long, Lock> txnlocktable;
+    private ConcurrentHashMap<Long, Lock> txnlocktable;
+    
+    /*
+     * A map from transactions in the buffer to associated futures to be filled.
+     */
+    private HashMap<Long, CompletableFuture<Boolean>> futures;
+    
+    /*
+     * A pointer to the store that the buffer is associated with.
+     */
+    public Store store;
     
     
     public NumLinkBuffer() {
@@ -41,64 +60,93 @@ public class NumLinkBuffer implements SmartBuffer {
         // Look at performance considerations, as well as whether we care about value ordering or not
         depsMap = new HashMultimap<>();
         numLink = new HashMap<>();
-        deplocktable = new HashMap<>();
-        txnlocktable = new HashMap<>();
+        objlocktable = new ConcurrentHashMap<>();
+        txnlocktable = new ConcurrentHashMap<>();
+    }
+    
+    private Lock getObjLock(Long oid) {
+        Lock lock = new ReentrantLock();
+        Lock existing = objlocktable.putIfAbsent(oid, lock);
+        return existing == null? lock : existing;
+    }
+    
+    private Lock getTxnLock(Long tid) {
+        Lock lock = new ReentrantLock();
+        Lock existing = objlocktable.putIfAbsent(tid, lock);
+        return existing == null? lock : existing;
     }
 
     @Override
-    public void add(long tid, Set<ObjectVN> actualdeps, Set<ObjectVN> resolveddeps) {
-        txnlocktable.put(tid, new ReentrantLock());
-        synchronized(txnlocktable.get(tid)){
-            for (ObjectVN object : actualdeps) {
-                if (!deplocktable.containsKey(object)) {
-                    deplocktable.put(object, new ReentrantLock());
-                }
-                // How setmultimap is implemented?
-                synchronized(txnlocktable.get(object)) {
-                    depsMap.put(object, tid);
-                }
-            }
-            numLink.put(tid, actualdeps.size());
-        }
-    }
-
-    @Override
-    public List<Long> remove(ObjectVN object) {
-        List<Long> translist = new LinkedList<Long>();
-        for (long tid : depsMap.get(object)) {
-            if (numLink.containsKey(tid)) {
-                synchronized(txnlocktable.get(tid)) {
-                    numLink.put(tid, numLink.get(tid) - 1);
-                    if (numLink.get(tid) == 0) {
-                        translist.add(tid);
+    public void add(long tid, Set<ObjectVN> deps, CompletableFuture<Boolean> future) {
+        synchronized(getTxnLock(tid)){
+            numLink.put(tid, 0);
+            for (ObjectVN object : deps) {
+                synchronized(getObjLock(object.oid)) {
+                    if (store.getversion(object.oid) > object.vnum) {
+                        //Version Conflict
+                        future.complete(false);
+                    } else if (store.getversion(object.oid) < object.vnum) {
+                        unresolveddepsMap.put(object, tid);
+                        depsMap.put(object, tid);
+                        numLink.put(tid, numLink.get(tid) + 1);
+                    } else {
+                        depsMap.put(object, tid);
                     }
                 }
             }
+            if (numLink.get(tid) == 0) {
+                future.complete(store.grabLock(tid));
+            } else {
+                futures.put(tid, future);
+            }
         }
-        depsMap.removeAll(object);
-        return translist;
     }
 
     @Override
-    public List<Long> eject(ObjectVN object) {
-        List<Long> translist = new LinkedList<Long>();
-        for (ObjectVN object_curr : depsMap.keySet()) {
-            if (object_curr.older(object)) {
-                for (long tid : depsMap.get(object_curr)) {
-                    synchronized(txnlocktable.get(tid)){
-                        translist.add(tid);
-                        numLink.remove(tid);
+    public void remove(ObjectVN object) {
+        eject(object);
+        synchronized (getObjLock(object.oid)) {
+            //If the current version of object is not ejected from the buffer
+            if (unresolveddepsMap.containsKey(object)) {
+                for (long tid : unresolveddepsMap.get(object)) {
+                    //If [tid] is not ejected from the buffer
+                    if (numLink.containsKey(tid)) {
+                        synchronized (getTxnLock(tid)) {
+                            numLink.put(tid, numLink.get(tid) - 1);
+                        }
+                        if (numLink.get(tid) == 0) {
+                            futures.get(tid).complete(store.grabLock(tid));
+                        }
                     }
                 }
-                depsMap.removeAll(object_curr);
+                unresolveddepsMap.removeAll(object);
             }
         }
-        return translist;
+    }
+
+    @Override
+    public void eject(ObjectVN object) {
+        synchronized (getObjLock(object.oid)) {
+            for (ObjectVN object_curr : depsMap.keySet()) {
+                if (object_curr.older(object)) {
+                    for (long tid : depsMap.get(object_curr)) {
+                        synchronized(getTxnLock(tid)) {
+                            numLink.remove(tid);
+                            futures.get(tid).complete(false);
+                        }
+                    }
+                    depsMap.removeAll(object_curr);
+                    unresolveddepsMap.removeAll(object_curr);
+                }
+            }
+        }
     }
     
     @Override
     public void delete(long tid) {
-        numLink.remove(tid);
+        synchronized (getTxnLock(tid)) {
+            numLink.remove(tid);
+        }
     }
 
 }

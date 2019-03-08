@@ -20,4 +20,14 @@ public interface Store {
      * Commit transaction [tid].
      */
     public void commit(long tid);
+    
+    /*
+     * Return the current version of [oid].
+     */
+    public Long getversion(long oid);
+    
+    /*
+     * Grab the locks for transaction [tid];
+     */
+    public boolean grabLock(long tid);
 }

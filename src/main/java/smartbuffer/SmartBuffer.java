@@ -1,6 +1,7 @@
 package smartbuffer;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 import com.google.common.base.Function;
@@ -13,19 +14,19 @@ public interface SmartBuffer {
      * Add transaction [tid] that depends on objects in [acutaldeps] (not resolved) and [resolveddeps] (resolved) to the buffer
      * Return true if the add is success.
      */
-    void add(long tid, Set<ObjectVN> actualdeps, Set<ObjectVN> resolveddeps);
+    void add(long tid, Set<ObjectVN> deps, CompletableFuture<Boolean> future);
 
     /*
      * Remove [object] from the deps of transactions depend on [oid].
      * Return a list of transactions with no deps.
      */
-    List<Long> remove(ObjectVN object);
+    void remove(ObjectVN object);
 
     /*
      * Eject transactions that depends on [object] with a smaller [vnum].
      * Return a list of transactions ejected.
      */
-    List<Long> eject(ObjectVN object);
+    void eject(ObjectVN object);
     
     /*
      * Remove transaction [tid] from the buffer.

@@ -53,7 +53,6 @@ public class StoreSB implements Store {
     public Future<Boolean> prepare(long tid, Set<ObjectVN> reads, Set<ObjectVN> writes) {
         // Check version conflict
         Set<ObjectVN> actualdeps = new HashSet<>();
-        Set<ObjectVN> resolveddeps = new HashSet<>();
         
         for (ObjectVN object : reads) {
             // if there is a older version, there is a version conflict and prepare fails.
@@ -62,9 +61,7 @@ public class StoreSB implements Store {
             // if there is a version that's never seen, add that to the dependency of this transaction
             } else if (object.vnum > lastversion.get(object.oid)) {
                 actualdeps.add(object);
-            } else {
-                resolveddeps.add(object);
-            }
+            } 
         }
         
         pending.putAll(tid, writes);
@@ -73,20 +70,9 @@ public class StoreSB implements Store {
             return futurewith(locktable.grabLock(reads,writes,tid));
         } else {
             // Result resolved to true if the dependencies of [tid] are resolved. resolved to false only when there is version conflict
-            buffer.add(tid, actualdeps, resolveddeps);
-            // Double check the dependency to avoid the case that dependencies are resolved concurrently.
-            actualdeps = depscheck(reads);
-            if (actualdeps.isEmpty()) {
-                buffer.delete(tid);
-                // Grab the lock on the store's side
-                return futurewith(locktable.grabLock(reads, writes, tid));
-            } else {
-                // Add a result to be filled to the futures. 
-                // Resolve [result] when the transaction is prepared successfully or ejected because of version conflict
-                CompletableFuture<Boolean> result = new CompletableFuture<>();
-                futures.put(tid, result);
-                return result;
-            }
+            CompletableFuture<Boolean> result = new CompletableFuture<>();
+            buffer.add(tid, reads, result);
+            return result;
         }
     }
     
@@ -110,7 +96,7 @@ public class StoreSB implements Store {
     	    //Release Lock
     	    locktable.releaseLock(pendingread.get(tid), pending.get(tid), tid);
     	    //Remove object from the buffer
-    	    List<Long> translist = buffer.remove(write);
+    	    buffer.remove(write);
             //Prepare objects that have all dependencies removed
     	    for (long tid1 : translist) {
     	        //Check version conflict
@@ -153,4 +139,14 @@ public class StoreSB implements Store {
 	private <T> Future<T> futurewith(T value){
 	    return CompletableFuture.completedFuture(value);
 	}
+
+    @Override
+    public Long getversion(long oid) {
+        return lastversion.get(oid);
+    }
+
+    @Override
+    public boolean grabLock(long tid) {
+        return locktable.grabLock(pendingread.get(tid), pending.get(tid), tid);
+    }
 }
