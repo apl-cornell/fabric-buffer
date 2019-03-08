@@ -33,11 +33,6 @@ public interface SmartBuffer {
      */
     void remove(ObjectVN object);
 
-    /*
-     * Eject transactions that depends on [object] with a smaller [vnum].
-     * Return a list of transactions ejected.
-     */
-
     /**
      * Eject transactions that have a version conflict with a given dependency. These transactions will be dropped.
      *
