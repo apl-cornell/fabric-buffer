@@ -8,13 +8,14 @@ import java.util.concurrent.Future;
 public interface SmartBuffer {
     /**
      * Add a transaction with a set of dependencies to the buffer. This method 
-     * will return a {@code Future} that resolves with {@code true} if the transaction 
-     * prepares successfully, and {@code false} if there is something that prevents
-     * the transaction from being prepared such as a version conflict. A transaction 
-     * is viewed as resolved if all of its dependencies are resolved.
+     * will return a {@code Future} that resolves with {@code true} if the
+     * transaction prepares successfully, and {@code false} if there is
+     * something that prevents the transaction from being prepared such as a
+     * version conflict. A transaction is viewed as resolved if all of its
+     * dependencies are resolved.
      *
-     * Note that if a transaction is deleted from the buffer before its corresponding 
-     * future resolves, the future will never resolve.
+     * Note that if a transaction is deleted from the buffer before its
+     * corresponding future resolves, the future will never resolve.
      *
      * @param tid The ID of the transaction.
      * @param deps A set of <i>all</i> of the transaction's dependencies. It is 
