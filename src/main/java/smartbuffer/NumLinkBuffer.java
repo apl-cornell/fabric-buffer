@@ -108,9 +108,9 @@ public class NumLinkBuffer implements SmartBuffer {
                 if (numLink.get(tid) == 0) {
                     numLink.remove(tid);
                     future.complete(store.grabLock(tid));
+                } else {
+                    futures.put(tid, future);
                 }
-            } else {
-                futures.put(tid, future);
             }
         }
         return future;
