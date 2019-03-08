@@ -11,27 +11,27 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 public class StoreSB implements Store {
-    public SmartBuffer buffer;
+    private SmartBuffer buffer;
 
     /*
      * A map from an object to the last version of the object that the store has seen.
      */
-    public HashMap<Long, Long> lastversion;
+    private HashMap<Long, Long> lastversion;
 
     /*
      * A map from [tid] to objects that transaction writes for transactions waiting for processing.
      */
-    public SetMultimap<Long, ObjectVN> pending;
+    private SetMultimap<Long, ObjectVN> pending;
 
     /*
      * A map from [tid] to objects that transaction reads for transactions waiting for processing.
      */
-    public SetMultimap<Long, ObjectVN> pendingread;
+    private SetMultimap<Long, ObjectVN> pendingread; // TODO: make sure we add to this at some point
 
     /*
      * A locktable for object-level lock.
      */
-    public ObjectLockTable locktable;
+    private ObjectLockTable locktable;
 
     public StoreSB(SmartBuffer buffer) {
         this.buffer = buffer;
