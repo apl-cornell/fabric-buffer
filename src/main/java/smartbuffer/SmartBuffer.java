@@ -1,13 +1,9 @@
 package smartbuffer;
 
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
-
-import com.google.common.base.Function;
-import java.util.function.Supplier;
-
 import util.ObjectVN;
+
+import java.util.Set;
+import java.util.concurrent.Future;
 
 public interface SmartBuffer {
     /**
