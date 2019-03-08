@@ -97,31 +97,6 @@ public class StoreSB implements Store {
     	    locktable.releaseLock(pendingread.get(tid), pending.get(tid), tid);
     	    //Remove object from the buffer
     	    buffer.remove(write);
-            //Prepare objects that have all dependencies removed
-    	    for (long tid1 : translist) {
-    	        //Check version conflict
-    	        boolean novc = true;
-    	        for (ObjectVN read : pendingread.get(tid1)) {
-    	            if (novc && read.vnum < lastversion.get(read.oid)) {
-    	                futures.get(tid1).complete(false);
-    	                novc = false;
-    	                break;
-    	            }
-    	        }
-    	        if (novc) {
-    	         // Grab the lock on the store's side
-    	            Set<ObjectVN> reads = pendingread.get(tid1);
-    	            Set<ObjectVN> writes = pending.get(tid1);
-    	            futures.get(tid1).complete(locktable.grabLock(reads, writes, tid1));
-    	        }
-    	        futures.remove(tid1);
-    	    }
-    	    //Abort transactions with version conflict to this commit
-    	    List<Long> ejectlist = buffer.eject(write);
-    	    for (long tid1 : ejectlist) {
-    	        abort(tid1);
-    	    }
-    	    
     	}
     	pending.removeAll(tid);
     }
@@ -129,11 +104,7 @@ public class StoreSB implements Store {
 	@Override
 	public void abort(long tid) {
 		pending.removeAll(tid);
-		if (futures.containsKey(tid)) {
-		    futures.get(tid).complete(false);
-		    futures.remove(tid);
-		}
-		
+		buffer.delete(tid);		
 	}
 	
 	private <T> Future<T> futurewith(T value){
