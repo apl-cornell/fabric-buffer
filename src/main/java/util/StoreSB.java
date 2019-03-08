@@ -1,18 +1,14 @@
 package util;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.SetMultimap;
+import smartbuffer.SmartBuffer;
+
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-import java.util.concurrent.locks.ReadWriteLock;
-
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.SetMultimap;
-
-import smartbuffer.SmartBuffer;
-import util.ObjectLockTable;
 
 public class StoreSB implements Store {
     public SmartBuffer buffer;
@@ -54,7 +50,7 @@ public class StoreSB implements Store {
             // if there is a older version, there is a version conflict and prepare fails.
             if (object.vnum < lastversion.get(object.oid)) {
                 return futurewith(false);
-            // if there is a version that's never seen, add that to the dependency of this transaction
+                // if there is a version that's never seen, add that to the dependency of this transaction
             } else if (object.vnum > lastversion.get(object.oid)) {
                 actualdeps.add(object);
             }
@@ -63,7 +59,7 @@ public class StoreSB implements Store {
         pending.putAll(tid, writes);
         if (actualdeps.isEmpty()) {
             // Grab the lock on the store's side
-            return futurewith(locktable.grabLock(reads,writes,tid));
+            return futurewith(locktable.grabLock(reads, writes, tid));
         } else {
             // Result resolved to true if the dependencies of [tid] are resolved. resolved to false only when there is version conflict
             return buffer.add(tid, reads);
@@ -77,7 +73,7 @@ public class StoreSB implements Store {
         Set<ObjectVN> actualdeps = new HashSet<>();
         for (ObjectVN object : deps) {
             if (lastversion.get(object.oid) < object.vnum) {
-            	actualdeps.add(object);
+                actualdeps.add(object);
             }
         }
         return actualdeps;
@@ -85,25 +81,25 @@ public class StoreSB implements Store {
 
     @Override
     public void commit(long tid) {
-    	for (ObjectVN write : pending.get(tid)) {
-    	    lastversion.put(write.oid, write.vnum);
-    	    //Release Lock
-    	    locktable.releaseLock(pendingread.get(tid), pending.get(tid), tid);
-    	    //Remove object from the buffer
-    	    buffer.remove(write);
-    	}
-    	pending.removeAll(tid);
+        for (ObjectVN write : pending.get(tid)) {
+            lastversion.put(write.oid, write.vnum);
+            //Release Lock
+            locktable.releaseLock(pendingread.get(tid), pending.get(tid), tid);
+            //Remove object from the buffer
+            buffer.remove(write);
+        }
+        pending.removeAll(tid);
     }
 
-	@Override
-	public void abort(long tid) {
-		pending.removeAll(tid);
-		buffer.delete(tid);
-	}
+    @Override
+    public void abort(long tid) {
+        pending.removeAll(tid);
+        buffer.delete(tid);
+    }
 
-	private <T> Future<T> futurewith(T value){
-	    return CompletableFuture.completedFuture(value);
-	}
+    private <T> Future<T> futurewith(T value) {
+        return CompletableFuture.completedFuture(value);
+    }
 
     @Override
     public Long getversion(long oid) {
