@@ -79,7 +79,7 @@ public class ObjectLock {
      * Release the write lock of this object for transaction [tid].
      */
     public synchronized void releasewrite(Long tid) {
-        if (this.writelockholder == tid) {
+        if (this.writelockholder.equals(tid)) {
             this.writelockholder = null;
         }
     }
