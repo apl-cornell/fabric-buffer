@@ -3,21 +3,23 @@ package util;
 import java.util.HashSet;
 import java.util.Set;
 
-// TODO: write a javadoc for this class
+/**
+ * ReadWriteLock that locks objects for transactions.
+ */
 public class ObjectLock {
-    /*
-     * [oid] of the object that this lock is associated with.
+    /**
+     * ID of the object that this lock is associated with.
      */
     private Long oid;
     
-    /*
-     * [tid] of the transaction that holds the write lock.
+    /**
+     * ID of the transaction that holds the write lock.
      * [null] if no transaction holds the write lock.
      */
     private Long writelockholder;
     
-    /*
-     * A list of [tid] of all transactions that hold the read lock.
+    /**
+     * A list of IDs of transactions that hold the read lock.
      * The list is empty if no transaction holds the read lock.
      */
     private Set<Long> readlockholder;
@@ -41,10 +43,14 @@ public class ObjectLock {
     private synchronized boolean isreadLocked() {
         return (!readlockholder.isEmpty());
     }
-    
-    /*
-     * Grab the read lock of this object for transaction [tid]. 
-     * Return true iff the read lock is successfully grabbed.
+
+    /**
+     * Grab the read lock of this object for a transaction. Return {@code true}
+     * if the read lock is successfully grabbed, and {@code false} otherwise.
+     * 
+     * @param tid ID of the transaction
+     * @return A boolean in accord with whether the read lock is successfully 
+     *         grabbed.
      */
     public synchronized boolean lockread(Long tid) {
         if (!isLocked() || isreadLocked()) {
@@ -55,9 +61,13 @@ public class ObjectLock {
         }
     }
     
-    /*
-     * Grab the write lock of this object for transaction [tid].
-     * Return true iff the write lock is successfully grabbed.
+    /**
+     * Grab the write lock of this object for a transaction. Return {@code true}
+     * if the write lock is successfully grabbed, and {@code false} otherwise.
+     * 
+     * @param tid ID of the transaction
+     * @return A boolean in accord with whether the write lock is successfully 
+     *         grabbed.
      */
     public synchronized boolean lockwrite(Long tid) {
         if (!isLocked()) {
@@ -67,16 +77,20 @@ public class ObjectLock {
             return false;
         }
     }
-    
-    /*
-     * Release the read lock of this object for transaction [tid].
+
+    /**
+     * Release the read lock of this object for a transaction.
+     * 
+     * @param tid ID of the transaction
      */
     public synchronized void releaseread(Long tid) {
         this.readlockholder.remove(tid);
     }
     
-    /*
-     * Release the write lock of this object for transaction [tid].
+    /**
+     * Release the write lock of this object for a transaction.
+     * 
+     * @param tid ID of the transaction
      */
     public synchronized void releasewrite(Long tid) {
         if (this.writelockholder.equals(tid)) {
