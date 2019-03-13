@@ -61,10 +61,7 @@ public class ObjectLockTable {
         ObjectLock lock = this.getLock(oid);
         lock.releaseread(tid);
     }
-    
-    /*
-     * Grab locks for objects in [reads] and [writes] for transaction [tid].
-     */
+
     /**
      * Grab read locks and write locks for a set of objects for a transaction.
      * Return {@code true} if all read locks and write locks are successfully
@@ -72,11 +69,13 @@ public class ObjectLockTable {
      * 
      * If the method fails to grab some locks, all locks are released.
      * 
-     * @param reads A set of IDs of objects to grab read lock
-     * @param writes A set of IDs of objects to grab write lock
+     * @param reads A set of IDs of objects the read locks of which needs to be
+     *              grabbed
+     * @param writes A set of IDs of objects the write locks of which needs to 
+     *               be grabbed
      * @param tid ID of the transaction
      * @return A boolean in accord with whether all locks are successfully
-     *         grabbed.
+     *         grabbed
      */
     public boolean grabLock(Set<ObjectVN> reads, Set<ObjectVN> writes, Long tid) {
         Comparator<ObjectVN> compare = new Comparator<ObjectVN>() {
@@ -110,6 +109,15 @@ public class ObjectLockTable {
     
     /*
      * Release locks for objects in [reads] and [writes] for transaction [tid].
+     */
+    /**
+     * Grab read locks and write locks for a set of objects for a transaction.
+     * 
+     * @param reads A set of IDs of objects the read locks of which needs to be 
+     *              released
+     * @param writes A set of IDs of objects the write locks of which needs to 
+     *               be released. 
+     * @param tid tid ID of the transaction
      */
     public void releaseLock(Set<ObjectVN> reads, Set<ObjectVN> writes, Long tid) {
         for (ObjectVN read : reads) {
