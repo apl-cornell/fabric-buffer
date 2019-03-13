@@ -24,6 +24,11 @@ public class ObjectLock {
      */
     private Set<Long> readlockholder;
     
+    /**
+     * Create an ObjectLock for an object.
+     * 
+     * @param oid ID of the object
+     */
     public ObjectLock(Long oid) {
         this.oid = oid;
         this.writelockholder = null;

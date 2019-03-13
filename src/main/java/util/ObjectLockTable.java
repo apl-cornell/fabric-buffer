@@ -7,13 +7,15 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import util.ObjectLock;
 
-// TODO: write a javadoc for this class
 public class ObjectLockTable {
     /*
      * A map from [oid] to the associated ObjectLock
      */
     private ConcurrentHashMap<Long, ObjectLock> locktable;
     
+    /**
+     * Create a new ObjectLockTable
+     */
     public ObjectLockTable() {
         this.locktable = new ConcurrentHashMap<>();
     }
@@ -62,6 +64,19 @@ public class ObjectLockTable {
     
     /*
      * Grab locks for objects in [reads] and [writes] for transaction [tid].
+     */
+    /**
+     * Grab read locks and write locks for a set of objects for a transaction.
+     * Return {@code true} if all read locks and write locks are successfully
+     * grabbed, and {@code false} otherwise. 
+     * 
+     * If the method fails to grab some locks, all locks are released.
+     * 
+     * @param reads A set of IDs of objects to grab read lock
+     * @param writes A set of IDs of objects to grab write lock
+     * @param tid ID of the transaction
+     * @return A boolean in accord with whether all locks are successfully
+     *         grabbed.
      */
     public boolean grabLock(Set<ObjectVN> reads, Set<ObjectVN> writes, Long tid) {
         Comparator<ObjectVN> compare = new Comparator<ObjectVN>() {
