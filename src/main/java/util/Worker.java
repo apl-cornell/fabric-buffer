@@ -11,7 +11,7 @@ public class Worker {
     /*
      * A map from an object to the last version of the object that the store has seen.
      */
-    private HashMap<Long, Long> lastversion;
+    public HashMap<Long, Long> lastversion;
     
     /*
      * A map from [oid] to RWlock.
@@ -26,7 +26,12 @@ public class Worker {
     /*
      * Location of each object
      */
-    private HashMap<Long, Store> location;
+    public HashMap<Long, Store> location;
+    
+    /*
+     * Worker ID.
+     */
+    private int wid;
     
     /*
      * Update the version number of object.
