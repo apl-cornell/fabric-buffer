@@ -1,14 +1,16 @@
 package util;
 
+<<<<<<< HEAD
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Random;
+=======
+import java.util.HashMap;
+import java.util.HashSet;
+>>>>>>> 6c28a7fd70bdcc83551ca33c548ee39fcfc91f9c
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.SetMultimap;
 
 public class TxnGenerator {
     /* Worker this generator is associated with */
@@ -72,8 +74,8 @@ public class TxnGenerator {
     
     /* Generate a new transaction */
     private void newTxn() {
-        SetMultimap<Store, ObjectVN> reads = new HashMultimap<>();
-        SetMultimap<Store, ObjectVN> writes = new HashMultimap<>();
+        HashMap<Store, HashSet<ObjectVN>> reads = new HashMap<>();
+        HashMap<Store, HashSet<ObjectVN>> writes = new HashMap<>();
         
         // Randomly generate reads
         switch(probtype) {

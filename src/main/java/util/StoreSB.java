@@ -1,7 +1,5 @@
 package util;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.SetMultimap;
 import smartbuffer.SmartBuffer;
 
 import java.util.HashMap;
@@ -21,12 +19,12 @@ public class StoreSB implements Store {
     /*
      * A map from [tid] to objects that transaction writes for transactions waiting for processing.
      */
-    private SetMultimap<Long, ObjectVN> pending;
+    private HashMap<Long, HashSet<ObjectVN>> pending;
 
     /*
      * A map from [tid] to objects that transaction reads for transactions waiting for processing.
      */
-    private SetMultimap<Long, ObjectVN> pendingread; // TODO: make sure we add to this at some point
+    private HashMap<Long, HashSet<ObjectVN>> pendingread; // TODO: make sure we add to this at some point
 
     /*
      * A locktable for object-level lock.
@@ -42,8 +40,8 @@ public class StoreSB implements Store {
     public StoreSB(SmartBuffer buffer) {
         this.buffer = buffer;
         this.lastversion = new HashMap<>();
-        this.pending = new HashMultimap<>();
-        this.pendingread = new HashMultimap<>();
+        this.pending = new HashMap<>();
+        this.pendingread = new HashMap<>();
         this.locktable = new ObjectLockTable();
     }
 
@@ -62,7 +60,7 @@ public class StoreSB implements Store {
             }
         }
 
-        pending.putAll(tid, writes);
+        Util.addToSetMap(pending, tid, writes);
         if (actualdeps.isEmpty()) {
             // Grab the lock on the store's side
             return futurewith(locktable.grabLock(reads, writes, tid));
@@ -81,12 +79,12 @@ public class StoreSB implements Store {
             //Remove object from the buffer
             buffer.remove(write);
         }
-        pending.removeAll(tid);
+        pending.remove(tid);
     }
 
     @Override
     public void abort(long tid) {
-        pending.removeAll(tid);
+        pending.remove(tid);
         buffer.delete(tid);
     }
 
