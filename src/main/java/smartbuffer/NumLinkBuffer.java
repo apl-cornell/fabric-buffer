@@ -162,4 +162,8 @@ public class NumLinkBuffer implements SmartBuffer {
         }
     }
 
+    @Override
+    public void setStore(Store store) {
+        this.store = store;
+    }
 }
