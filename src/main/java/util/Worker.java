@@ -3,9 +3,6 @@ package util;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Set;
-import java.util.concurrent.locks.ReadWriteLock;
-
-import util.ObjectLockTable;
 
 public class Worker {
     /*

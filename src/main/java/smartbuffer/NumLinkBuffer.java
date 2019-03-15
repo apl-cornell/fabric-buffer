@@ -1,33 +1,28 @@
 package smartbuffer;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.SetMultimap;
-
-import util.ObjectLock;
 import util.ObjectVN;
 import util.Store;
+import util.Util;
 
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class NumLinkBuffer implements SmartBuffer {
     /*
      * A map from the object to transaction IDs that depend on the object.
      */
-    private SetMultimap<ObjectVN, Long> depsMap;
+    private HashMap<ObjectVN, HashSet<Long>> depsMap;
     
     /*
      * A map from the object to transaction IDS that depend on the object and that the dependency is not resolved.
      */
-    private SetMultimap<ObjectVN, Long> unresolveddepsMap;
+    private HashMap<ObjectVN, HashSet<Long>> unresolveddepsMap;
 
     /*
      * A map from a transaction ID to the number of unresolved dependencies.
@@ -58,7 +53,7 @@ public class NumLinkBuffer implements SmartBuffer {
     public NumLinkBuffer() {
         // TODO: decide the implementation we want to use
         // Look at performance considerations, as well as whether we care about value ordering or not
-        depsMap = new HashMultimap<>();
+        depsMap = new HashMap<>();
         numLink = new HashMap<>();
         objlocktable = new ConcurrentHashMap<>();
         txnlocktable = new ConcurrentHashMap<>();
@@ -88,8 +83,8 @@ public class NumLinkBuffer implements SmartBuffer {
                     //Version Conflict
                     future.complete(false);
                 } else if (store.getversion(object.oid) < object.vnum) {
-                    unresolveddepsMap.put(object, tid);
-                    depsMap.put(object, tid);
+                    Util.addToSetMap(unresolveddepsMap, object, tid);
+                    Util.addToSetMap(depsMap, object, tid);
                     synchronized (getTxnLock(tid)) {
                         //if the transaction is not aborted
                         if (numLink.containsKey(tid)) {
@@ -99,7 +94,7 @@ public class NumLinkBuffer implements SmartBuffer {
                         }
                     }
                 } else {
-                    depsMap.put(object, tid);
+                    Util.addToSetMap(depsMap, object, tid);
                 }
             }
         }
@@ -135,7 +130,7 @@ public class NumLinkBuffer implements SmartBuffer {
                         }
                     }
                 }
-                unresolveddepsMap.removeAll(object);
+                unresolveddepsMap.remove(object);
             }
         }
     }
@@ -152,8 +147,8 @@ public class NumLinkBuffer implements SmartBuffer {
                             futures.remove(tid);
                         }
                     }
-                    depsMap.removeAll(object_curr);
-                    unresolveddepsMap.removeAll(object_curr);
+                    depsMap.remove(object_curr);
+                    unresolveddepsMap.remove(object_curr);
                 }
             }
         }

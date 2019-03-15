@@ -1,10 +1,9 @@
 package util;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.SetMultimap;
 
 public class TxnGenerator {
     /* Worker this generator is associated with */
@@ -39,23 +38,23 @@ public class TxnGenerator {
     
     /* Generate a new transaction */
     private void newTxn() {
-        SetMultimap<Store, ObjectVN> reads = new HashMultimap<>();
-        SetMultimap<Store, ObjectVN> writes = new HashMultimap<>();
+        HashMap<Store, HashSet<ObjectVN>> reads = new HashMap<>();
+        HashMap<Store, HashSet<ObjectVN>> writes = new HashMap<>();
         
         // Randomly generate reads
         for (long oid : worker.lastversion.keySet()) {
             double random = Math.random();
             if (random > readsratio) {
-                reads.put(worker.location.get(oid), 
+                Util.addToSetMap(reads, worker.location.get(oid),
                         new ObjectVN(oid, worker.lastversion.get(oid)));
             }
         }
         
         // Pick writes from reads
-        for (ObjectVN object : reads.values()) {
+        for (ObjectVN object : Util.getSetMapValues(reads)) {
             double random = Math.random();
             if (random > writesratio) {
-                writes.put(worker.location.get(object.oid), 
+                Util.addToSetMap(writes, worker.location.get(object.oid),
                         new ObjectVN(object.oid, object.vnum + 1));
             }
         }

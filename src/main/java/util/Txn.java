@@ -1,14 +1,9 @@
 package util;
 
-import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
+
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
-
-import util.ObjectVN;
-import util.Store;
-import util.Worker;
 
 public class Txn {
     /*
@@ -24,12 +19,12 @@ public class Txn {
     /*
      * A map from store to objects needed to be read in that store.
      */
-    private SetMultimap<Store, ObjectVN> reads;
+    private HashMap<Store, HashSet<ObjectVN>> reads;
     
     /*
      * A map from store to objects needed to be write in that store. 
      */
-    private SetMultimap<Store, ObjectVN> writes;
+    private HashMap<Store, HashSet<ObjectVN>> writes;
     
     /*
      * A pointer to the worker that owns this transaction.
@@ -38,7 +33,7 @@ public class Txn {
     
     private ExecutorService pool;
     
-    public Txn(Worker worker, long tid, SetMultimap<Store, ObjectVN> reads, SetMultimap<Store, ObjectVN> writes) {
+    public Txn(Worker worker, long tid, HashMap<Store, HashSet<ObjectVN>> reads, HashMap<Store, HashSet<ObjectVN>> writes) {
         this.worker = worker;
         this.tid = tid;
         this.reads = reads;
@@ -48,8 +43,8 @@ public class Txn {
     
     public void prepare() {
         // Acquire lock on the worker's side
-        Set<ObjectVN> readso = new HashSet<>(reads.values());
-        Set<ObjectVN> writeso = new HashSet<>(writes.values());
+        Set<ObjectVN> readso = new HashSet<>(Util.getSetMapValues(reads));
+        Set<ObjectVN> writeso = new HashSet<>(Util.getSetMapValues(writes));
         if (!worker.grablock(readso, writeso, tid)) {
             worker.releaselock(readso, writeso, tid);
             return;
@@ -105,15 +100,26 @@ public class Txn {
     
     public void abort() {
         //Release lock on the worker's side
-        worker.releaselock(new HashSet<>(reads.values()), new HashSet<>(writes.values()), tid);        
+        worker.releaselock(
+                new HashSet<>(Util.getSetMapValues(reads)),
+                new HashSet<>(Util.getSetMapValues(writes)),
+                tid
+        );
     }
     
     public void commit() {
-        worker.update(writes.values());
+        worker.update(Util.getSetMapValues(writes));
         //Release lock on the worker's side
-        worker.releaselock(new HashSet<>(reads.values()), new HashSet<>(writes.values()), tid);        
-        for (Store s :  Sets.union(reads.keySet(), writes.keySet())){
-            Callable<Void> c = () -> {s.commit(tid);return null;};
+        worker.releaselock(
+                new HashSet<>(Util.getSetMapValues(reads)),
+                new HashSet<>(Util.getSetMapValues(writes)),
+                tid
+        );
+        for (Store s : Sets.union(reads.keySet(), writes.keySet())){
+            Callable<Void> c = () -> {
+                s.commit(tid);
+                return null;
+            };
             pool.submit(c);
         }
     }
