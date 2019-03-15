@@ -3,10 +3,9 @@ package smartbuffer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import util.StoreSB;
 
 import java.util.HashSet;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 abstract class SmartBufferTest {
     private SmartBuffer buffer;
@@ -22,6 +21,7 @@ abstract class SmartBufferTest {
     @BeforeEach
     void setUp() {
         buffer = createInstance();
+        buffer.setStore(new StoreSB(buffer));
     }
 
     @AfterEach
