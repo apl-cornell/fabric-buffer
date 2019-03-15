@@ -2,6 +2,7 @@ package util;
 
 import java.util.concurrent.BlockingQueue;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 
 public class TxnGenerator {
@@ -29,8 +30,8 @@ public class TxnGenerator {
     
     /* Generate a new transaction */
     private void newTxn() {
-        SetMultimap<Store, ObjectVN> reads = new SetMultimap<>();
-        SetMultimap<Store, ObjectVN> writes = new SetMultimap<>();
+        SetMultimap<Store, ObjectVN> reads = new HashMultimap<>();
+        SetMultimap<Store, ObjectVN> writes = new HashMultimap<>();
         
         // Randomly generate reads
         for (long oid : worker.lastversion.keySet()) {
@@ -53,6 +54,10 @@ public class TxnGenerator {
         long ntid = generateTid();
         
         Txn new_txn = new Txn(worker, ntid, reads, writes);
-        queue.put(new_txn);
+        try {
+            queue.put(new_txn);
+        } catch (InterruptedException e) {
+            // TODO: should we handle this somehow?
+        }
     }
 }
