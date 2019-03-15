@@ -12,6 +12,11 @@ repositories {
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-    compile group: 'com.google.guava', name: 'guava', version: '23.5-jre'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
+    implementation group: 'com.google.guava', name: 'guava', version: '23.5-jre'
+}
+
+test {
+    useJUnitPlatform()
 }
