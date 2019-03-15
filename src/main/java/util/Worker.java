@@ -31,7 +31,7 @@ public class Worker {
     /*
      * Worker ID.
      */
-    private int wid;
+    public int wid;
     
     /*
      * Update the version number of object.
