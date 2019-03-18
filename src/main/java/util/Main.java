@@ -51,4 +51,27 @@ public class Main {
             txngenlist.add(txngen);
         }
     }
+    
+    /*
+     * Threads for transaction generators to create transaction.
+     */
+    class TxnGenThread implements Runnable {
+        private TxnGenerator txngen;
+        
+        public TxnGenThread(TxnGenerator txngen) {
+            this.txngen = txngen;
+        }
+
+        @Override
+        public void run() {
+            // TODO Auto-generated method stub
+            txngen.newTxn();
+            try {
+                Thread.sleep(NEW_TRANS_INV);
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+    }
 }

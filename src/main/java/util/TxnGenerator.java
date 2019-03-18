@@ -71,7 +71,7 @@ public class TxnGenerator {
     }
     
     /* Generate a new transaction */
-    private void newTxn() {
+    public void newTxn() {
         HashMap<Store, HashSet<ObjectVN>> reads = new HashMap<>();
         HashMap<Store, HashSet<ObjectVN>> writes = new HashMap<>();
         
