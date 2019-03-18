@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Worker {
     /*
@@ -47,7 +48,7 @@ public class Worker {
     public Worker(int wid, List<Store> storelist) {
         lastversion = new HashMap<>();
         locktable = new ObjectLockTable();
-        prepared = new HashSet<>();
+        prepared = (new ConcurrentHashMap<Txn,Integer>()).keySet();
         location = new HashMap<>();
         this.wid = wid;
         this.storelist = storelist;
@@ -88,5 +89,19 @@ public class Worker {
      */
     public void releaselock(Set<ObjectVN> reads, Set<ObjectVN> writes, Long tid) {
         locktable.releaseLock(reads, writes, tid);
+    }
+    
+    /*
+     * Take a transaction from the generator and prepare the transaction. 
+     */
+    public void startnewtxn() {
+        try {
+            Txn newtxn = queue.take();
+            newtxn.prepare();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
     }
 }
