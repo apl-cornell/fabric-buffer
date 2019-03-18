@@ -2,7 +2,10 @@ package util;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 
 public class Worker {
     /*
@@ -29,6 +32,33 @@ public class Worker {
      * Worker ID.
      */
     public int wid;
+    
+    /*
+     * queue to communicate with txn Generator
+     */
+    private BlockingQueue<Txn> queue;
+    
+    /*
+     * List of existing stores.
+     */
+    private List<Store> storelist;
+    
+    
+    public Worker(int wid, List<Store> storelist) {
+        lastversion = new HashMap<>();
+        locktable = new ObjectLockTable();
+        prepared = new HashSet<>();
+        location = new HashMap<>();
+        this.wid = wid;
+        this.storelist = storelist;
+    }
+    
+    /*
+     * Set the queue.
+     */
+    public void setqueue(BlockingQueue<Txn> queue) {
+        this.queue = queue;
+    }
     
     /*
      * Update the version number of object.

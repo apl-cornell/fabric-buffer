@@ -47,6 +47,7 @@ public class TxnGenerator {
         this.worker = worker;
         this.wid = worker.wid;
         this.queue = new ArrayBlockingQueue<>(TXN_QUEUE_CAPACITY);
+        worker.setqueue(queue);
     }
     
     /* Construct a txnGenerator for fixed size transactions  */
