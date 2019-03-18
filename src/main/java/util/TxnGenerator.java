@@ -1,14 +1,11 @@
 package util;
 
-<<<<<<< HEAD
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Random;
-=======
 import java.util.HashMap;
 import java.util.HashSet;
->>>>>>> 6c28a7fd70bdcc83551ca33c548ee39fcfc91f9c
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -95,6 +92,23 @@ public class TxnGenerator {
                 Collections.sort(rwlist);
                 
                 //Pick items from worker.lastversion based on rwlist
+                int i = 0;
+                int num = 0;
+                for (long oid : worker.lastversion.keySet()) {
+                    if (i == rwlist.peek()) {
+                        if (num < readsize) {
+                            Util.addToSetMap(reads, worker.location.get(oid), 
+                                    new ObjectVN(oid, worker.lastversion.get(oid)));
+                        } else {
+                            Util.addToSetMap(writes, worker.location.get(oid), 
+                                    new ObjectVN(oid, worker.lastversion.get(oid) + 1));
+                        }
+                        num++;
+                        rwlist.removeFirst();
+                    }
+                    
+                }
+                break;
                 
                 
             case Uniform: 
@@ -104,13 +118,14 @@ public class TxnGenerator {
                     if (random < numObjectratio) {
                         random = Math.random();
                         if (random < rwratio) {
-                            writes.put(worker.location.get(oid),
+                            Util.addToSetMap(writes, worker.location.get(oid), 
                                     new ObjectVN(oid, worker.lastversion.get(oid) + 1));
                         }
-                        reads.put(worker.location.get(oid), 
+                        Util.addToSetMap(reads, worker.location.get(oid), 
                                 new ObjectVN(oid, worker.lastversion.get(oid)));
                     }
                 }
+                break;
             
             case Gaussian:
                 for (long oid : worker.lastversion.keySet()) {
@@ -119,13 +134,14 @@ public class TxnGenerator {
                     if (random < numObjectratio) {
                         random = Math.random();
                         if (random < rwratio) {
-                            writes.put(worker.location.get(oid),
+                            Util.addToSetMap(writes, worker.location.get(oid), 
                                     new ObjectVN(oid, worker.lastversion.get(oid) + 1));
                         }
-                        reads.put(worker.location.get(oid), 
+                        Util.addToSetMap(reads, worker.location.get(oid), 
                                 new ObjectVN(oid, worker.lastversion.get(oid)));
                     }
                 }
+                break;
         }
         
         long ntid = generateTid();
