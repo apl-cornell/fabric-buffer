@@ -41,13 +41,13 @@ public class Txn {
         this.pool = Executors.newCachedThreadPool();
     }
     
-    public void prepare() {
+    public boolean prepare() {
         // Acquire lock on the worker's side
         Set<ObjectVN> readso = new HashSet<>(Util.getSetMapValues(reads));
         Set<ObjectVN> writeso = new HashSet<>(Util.getSetMapValues(writes));
         if (!worker.grablock(readso, writeso, tid)) {
             worker.releaselock(readso, writeso, tid);
-            return;
+            return false;
         }
         // Submit transaction to each store
         if (TxnConcurrent) {
@@ -73,7 +73,7 @@ public class Txn {
                     // if the prepare failed, abort this transaction
                     if (!result.get()) {
                         abort();
-                        return;
+                        return false;
                     }
                 } catch (InterruptedException | ExecutionException e) {
                     // TODO Auto-generated catch block
@@ -87,7 +87,7 @@ public class Txn {
                 try {
                     if (!result.get()) {
                         abort();
-                        return;
+                        return false;
                     }
                 } catch (InterruptedException | ExecutionException e) {
                     // TODO Auto-generated catch block
@@ -96,6 +96,7 @@ public class Txn {
             }
         }
         worker.addPrepared(this);
+        return true;
     }
     
     public void abort() {

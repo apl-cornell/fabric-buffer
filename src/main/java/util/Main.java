@@ -20,6 +20,11 @@ public class Main {
     private static final int NEW_TRANS_INV = 1;
     
     /*
+     * Whether worker prepare transactions concurrently.
+     */
+    private static final boolean WORKER_CONCUR_PREPARE = false; 
+    
+    /*
      * List of stores.
      */
     private ArrayList<Store> storelist;
@@ -45,7 +50,7 @@ public class Main {
         
         //Initialize workers
         for (int i = 0; i < WORKER_NUM; i++) {
-            Worker worker = new Worker(i, storelist);
+            Worker worker = new Worker(i, storelist, WORKER_CONCUR_PREPARE);
             TxnGenerator txngen = new TxnGenerator(worker);
             workerlist.add(worker);
             txngenlist.add(txngen);
@@ -72,6 +77,38 @@ public class Main {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
+        }
+    }
+    
+    /*
+     * Threads for transaction prepare.
+     */
+    class WorkerPrepareThread implements Runnable {
+        private Worker worker;
+        
+        public WorkerPrepareThread(Worker worker) {
+            this.worker = worker;
+        }
+
+        @Override
+        public void run() {
+            worker.startnewtxn();
+        }
+    }
+    
+    /*
+     * Thread for transaction commit.
+     */
+    class WorkerCommitThread implements Runnable {
+        private Worker worker;
+        
+        public WorkerCommitThread(Worker worker) {
+            this.worker = worker;
+        }
+        
+        @Override
+        public void run() {
+            worker.
         }
     }
 }

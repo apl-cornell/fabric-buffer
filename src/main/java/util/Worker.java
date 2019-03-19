@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 
 public class Worker {
     /*
@@ -44,14 +45,22 @@ public class Worker {
      */
     private List<Store> storelist;
     
+    /*
+     * Whether worker prepare and commit transactions concurrently.
+     */
+    private static boolean WORKER_CONCUR;
     
-    public Worker(int wid, List<Store> storelist) {
+    private ExecutorService pool;
+    
+    
+    public Worker(int wid, List<Store> storelist, boolean concur) {
         lastversion = new HashMap<>();
         locktable = new ObjectLockTable();
         prepared = (new ConcurrentHashMap<Txn,Integer>()).keySet();
         location = new HashMap<>();
         this.wid = wid;
         this.storelist = storelist;
+        WORKER_CONCUR = concur;
     }
     
     /*
@@ -74,7 +83,12 @@ public class Worker {
      * Add a transaction to the set of prepared transactions.
      */
     public void addPrepared(Txn t) {
-        prepared.add(t);
+        if (prepared.isEmpty()) {
+            prepared.add(t);
+            prepared.notify();
+        } else {
+            prepared.add(t);
+        }
     }
     
     /*
@@ -95,13 +109,75 @@ public class Worker {
      * Take a transaction from the generator and prepare the transaction. 
      */
     public void startnewtxn() {
-        try {
-            Txn newtxn = queue.take();
-            newtxn.prepare();
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        if (WORKER_CONCUR) {
+            Thread t = new Thread(new TxnPrepareThread());
+            t.start();
+        } else {
+            try {
+                Txn newtxn = queue.take();
+                newtxn.prepare();
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+    }
+    
+    /*
+     * Take a transaction from prepared and prepare the transaction.
+     */
+    public void committxn() {
+        if (WORKER_CONCUR) {
+            Thread t = new Thread(new TxnCommitThread());
+            t.start();
+        } else {
+            if (!prepared.isEmpty()) {
+                for (Txn newtxn : prepared) {
+                    newtxn.commit();
+                    prepared.remove(newtxn);
+                    break;
+                }
+            }
+        }
+    }
+    
+    class TxnPrepareThread implements Runnable {
+
+        @Override
+        public void run() {
+            try {
+                Txn newtxn = queue.take();
+                boolean res = newtxn.prepare();
+                if (!res) {
+                    // TODO : Handle version conflict
+                }
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            
         }
         
+    }
+    
+    class TxnCommitThread implements Runnable {
+        
+        @Override
+        public void run() {
+            try {
+                while (prepared.isEmpty()) {
+                    prepared.wait();
+                }
+                for (Txn newtxn : prepared) {
+                    newtxn.commit();
+                    prepared.remove(newtxn);
+                    break;
+                }
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            
+        }
     }
 }
