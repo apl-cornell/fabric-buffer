@@ -21,6 +21,13 @@ public class Main {
     
     /*
      * Whether worker prepare and commit transactions concurrently.
+     * 
+     * If true, worker prepares for a transaction and if the prepare is 
+     * successful, worker commit the transaction immediately. Only one 
+     * transaction is being prepared.
+     * 
+     * If false, worker prepare a transaction in a separate thread and commit
+     * a transaction in a separate thread.
      */
     private static final boolean WORKER_CONCUR = false; 
     
@@ -30,14 +37,19 @@ public class Main {
     private ArrayList<Store> storelist;
     
     /*
-     * List of workers.
+     * List of worker prepare thread.
      */
-    private ArrayList<Worker> workerlist;
+    private ArrayList<Thread> workerpreparelist;
+    
+    /*
+     * List of worker commit thread.
+     */
+    private ArrayList<Thread> workercommitlist;
     
     /*
      * List of Transaction Generators.
      */
-    private ArrayList<TxnGenerator> txngenlist;
+    private ArrayList<Thread> txngenlist;
     
     
     public void main(String args[]) {
@@ -52,8 +64,20 @@ public class Main {
         for (int i = 0; i < WORKER_NUM; i++) {
             Worker worker = new Worker(i, storelist, WORKER_CONCUR);
             TxnGenerator txngen = new TxnGenerator(worker);
-            workerlist.add(worker);
-            txngenlist.add(txngen);
+            if (WORKER_CONCUR) {
+                workercommitlist.add(new Thread(new WorkerPrepareThread(worker)));
+            }
+            workerpreparelist.add(new Thread(new WorkerPrepareThread(worker)));
+            txngenlist.add(new Thread(new TxnGenThread(txngen)));
+        }
+        
+        //Start txngen thread and worker thread
+        for (int i = 0; i < WORKER_NUM; i++) {
+            txngenlist.get(i).start();
+            workerpreparelist.get(i).start();
+            if (WORKER_CONCUR) {
+                workercommitlist.get(i).start();
+            }
         }
     }
     

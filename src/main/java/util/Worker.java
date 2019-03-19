@@ -115,7 +115,12 @@ public class Worker {
         } else {
             try {
                 Txn newtxn = queue.take();
-                newtxn.prepare();
+                boolean res = newtxn.prepare();
+                if (res) {
+                    newtxn.commit();
+                } else {
+                    // TODO : Handle version conflict
+                }
             } catch (InterruptedException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
