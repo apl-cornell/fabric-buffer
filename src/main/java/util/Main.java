@@ -20,9 +20,9 @@ public class Main {
     private static final int NEW_TRANS_INV = 1;
     
     /*
-     * Whether worker prepare transactions concurrently.
+     * Whether worker prepare and commit transactions concurrently.
      */
-    private static final boolean WORKER_CONCUR_PREPARE = false; 
+    private static final boolean WORKER_CONCUR = false; 
     
     /*
      * List of stores.
@@ -50,7 +50,7 @@ public class Main {
         
         //Initialize workers
         for (int i = 0; i < WORKER_NUM; i++) {
-            Worker worker = new Worker(i, storelist, WORKER_CONCUR_PREPARE);
+            Worker worker = new Worker(i, storelist, WORKER_CONCUR);
             TxnGenerator txngen = new TxnGenerator(worker);
             workerlist.add(worker);
             txngenlist.add(txngen);
@@ -108,7 +108,7 @@ public class Main {
         
         @Override
         public void run() {
-            worker.
+            worker.committxn();
         }
     }
 }
