@@ -20,6 +20,18 @@ public class Main {
     private static final int NEW_TRANS_INV = 1;
     
     /*
+     * Intervals for worker to start a new txn. Only used when WORKER_CONCUR is
+     * true.
+     */
+    private static final int TRANS_PREPARE_INV = 1;
+    
+    /*
+     * Intervals for worker to commit a txn. Only used when WORKER_CONCUR is 
+     * true.
+     */
+    private static final int TRANS_COMMIT_INV = 1;
+    
+    /*
      * Whether worker prepare and commit transactions concurrently.
      * 
      * If true, worker prepares for a transaction and if the prepare is 
@@ -30,6 +42,16 @@ public class Main {
      * a transaction in a separate thread.
      */
     private static final boolean WORKER_CONCUR = false; 
+    
+    /*
+     * Duration of the test.
+     */
+    private static final int DURATION = 1;
+    
+    /*
+     * 
+     */
+    private boolean exit;
     
     /*
      * List of stores.
@@ -79,6 +101,15 @@ public class Main {
                 workercommitlist.get(i).start();
             }
         }
+        
+        try {
+            Thread.sleep(DURATION);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
+        exit = true;
     }
     
     /*
@@ -94,9 +125,11 @@ public class Main {
         @Override
         public void run() {
             // TODO Auto-generated method stub
-            txngen.newTxn();
             try {
-                Thread.sleep(NEW_TRANS_INV);
+                while (!exit) {
+                    txngen.newTxn();                
+                    Thread.sleep(NEW_TRANS_INV);
+                }
             } catch (InterruptedException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -116,7 +149,21 @@ public class Main {
 
         @Override
         public void run() {
-            worker.startnewtxn();
+            if (WORKER_CONCUR) {
+                try {
+                    while (!exit) {
+                        worker.startnewtxn();
+                        Thread.sleep(TRANS_PREPARE_INV);
+                    } 
+                } catch (InterruptedException e) {
+                 // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            } else {
+                while (true) {
+                    worker.startnewtxn();
+                }
+            }
         }
     }
     
@@ -132,7 +179,16 @@ public class Main {
         
         @Override
         public void run() {
-            worker.committxn();
+            try {
+                while (!exit) {
+                    worker.committxn();
+                    Thread.sleep(TRANS_COMMIT_INV);
+                }
+                
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
     }
 }
