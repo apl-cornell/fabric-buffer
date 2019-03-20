@@ -43,7 +43,7 @@ public class Worker {
     /*
      * List of existing stores.
      */
-    private List<Store> storelist;
+    public List<Store> storelist;
     
     /*
      * Whether worker prepare and commit transactions concurrently.

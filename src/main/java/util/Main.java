@@ -75,6 +75,11 @@ public class Main {
     private static final int DURATION = 1;
     
     /*
+     * Initial capacity of the store of each worker for each store
+     */
+    private static final int INITIAL_CAPACITY = 5;
+    
+    /*
      * End flag of the whole testing
      */
     private boolean exit;
@@ -114,10 +119,10 @@ public class Main {
             TxnGenerator txngen;
             switch (probtype) {
                 case FixedSize:
-                    txngen = new TxnGenerator(worker, readsize, writesize);
+                    txngen = new TxnGenerator(worker,readsize, writesize,INITIAL_CAPACITY);
                     break;
                 default:
-                    txngen = new TxnGenerator(worker,probtype, numObjectratio, rwratio);
+                    txngen = new TxnGenerator(worker,probtype, numObjectratio, rwratio, INITIAL_CAPACITY);
             }
             if (WORKER_CONCUR) {
                 workercommitlist.add(new Thread(new WorkerPrepareThread(worker)));

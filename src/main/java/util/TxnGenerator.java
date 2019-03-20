@@ -22,6 +22,9 @@ public class TxnGenerator {
     /*The biggest unused tid */
     private long tid;
     
+    /*The biggest unused oid*/
+    private long oid;
+    
     /*Distribution for transaction*/
     ProbDis probtype;
     
@@ -33,6 +36,12 @@ public class TxnGenerator {
     
     /* Generate a new unique tid */
     private long generateTid() {
+        tid++;
+        return (tid - 1)*32 + wid;
+    }
+    
+    /* Generate a new unique oid */
+    private long generateOid() {
         tid++;
         return (tid - 1)*32 + wid;
     }
@@ -51,23 +60,27 @@ public class TxnGenerator {
     }
     
     /* Construct a txnGenerator for fixed size transactions  */
-    public TxnGenerator(Worker worker, int readsize, int writesize) {
+    public TxnGenerator(Worker worker, int readsize, int writesize, int initial_cap) {
         this.worker = worker;
         this.wid = worker.wid;
         this.queue = new ArrayBlockingQueue<>(TXN_QUEUE_CAPACITY);
         this.probtype = ProbDis.FixedSize;
         this.readsize = readsize;
         this.writesize = writesize;
+        this.tid = 0;
+        this.oid = 0;
     }
     
     /**/
-    public TxnGenerator(Worker worker, ProbDis probtype, double numObjectratio, double rwratio) {
+    public TxnGenerator(Worker worker, ProbDis probtype, double numObjectratio, double rwratio, int intial_cap) {
         this.worker = worker;
         this.wid = worker.wid;
         this.queue = new ArrayBlockingQueue<>(TXN_QUEUE_CAPACITY);
         this.probtype = probtype;
         this.numObjectratio = numObjectratio;
         this.rwratio = rwratio;
+        this.tid = 0;
+        this.oid = 0;
     }
     
     /* Generate a new transaction */
