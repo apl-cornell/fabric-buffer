@@ -132,17 +132,27 @@ public class Worker {
      * Take a transaction from prepared and prepare the transaction.
      */
     public void committxn() {
-        if (WORKER_CONCUR) {
-            Thread t = new Thread(new TxnCommitThread());
-            t.start();
-        } else {
-            if (!prepared.isEmpty()) {
+        Runnable task = () -> {
+            try {
+                while (prepared.isEmpty()) {
+                    prepared.wait();
+                }
                 for (Txn newtxn : prepared) {
                     newtxn.commit();
                     prepared.remove(newtxn);
                     break;
                 }
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
+        };
+        
+        if (WORKER_CONCUR) {
+            Thread t = new Thread(task);
+            t.start();
+        } else {
+            task.run();
         }
     }
     
@@ -163,26 +173,5 @@ public class Worker {
             
         }
         
-    }
-    
-    class TxnCommitThread implements Runnable {
-        
-        @Override
-        public void run() {
-            try {
-                while (prepared.isEmpty()) {
-                    prepared.wait();
-                }
-                for (Txn newtxn : prepared) {
-                    newtxn.commit();
-                    prepared.remove(newtxn);
-                    break;
-                }
-            } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            
-        }
     }
 }
