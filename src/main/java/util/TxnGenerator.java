@@ -120,22 +120,26 @@ public class TxnGenerator {
         // Randomly generate reads
         switch(probtype) {
             case FixedSize:
+                // make sure the total number of transactions is readsize + writesize
                 Set<Long> objects = worker.lastversion.keySet();
-                HashSet<Long> readSet = randomSubset(objects, readsize);
-                HashSet<Long> writeSet = randomSubset(objects, writesize);
+                HashSet<Long> rwSet = randomSubset(objects, readsize + writesize);
 
+                int writesSoFar = 0;
                 for (long oid : worker.lastversion.keySet()) {
-                    // these are both O(1)
-                    boolean isRead = readSet.contains(oid);
-                    boolean isWrite = writeSet.contains(oid);
-
-                    if (isRead || isWrite) {
+                    // this is O(1)
+                    if (rwSet.contains(oid)) {
+                        // this is a read or a write
+                        // at the very least, this is a read
                         Store location = worker.location.get(oid);
                         ObjectVN readObject = new ObjectVN(oid, worker.lastversion.get(oid));
                         Util.addToSetMap(reads,location, readObject);
-                        if (isWrite) {
+
+                        // upgrade the first [writesize] transactions to writes
+                        if (writesSoFar < writesize) {
+                            // upgrade to a write
                             ObjectVN writeObject = new ObjectVN(oid, worker.lastversion.get(oid) + 1);
                             Util.addToSetMap(writes, location, writeObject);
+                            writesSoFar++;
                         }
                     }
                 }
