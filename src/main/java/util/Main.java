@@ -35,12 +35,12 @@ public class Main {
     /*
      * Whether worker prepare and commit transactions concurrently.
      * 
-     * If true, worker prepares for a transaction and if the prepare is 
+     * If true, worker prepare a transaction in a separate thread and commit
+     * a transaction in a separate thread.
+     * 
+     * If false, worker prepares for a transaction and if the prepare is 
      * successful, worker commit the transaction immediately. Only one 
      * transaction is being prepared.
-     * 
-     * If false, worker prepare a transaction in a separate thread and commit
-     * a transaction in a separate thread.
      */
     private static final boolean WORKER_CONCUR = false; 
     
@@ -125,7 +125,7 @@ public class Main {
                     txngen = new TxnGenerator(worker,probtype, numObjectratio, rwratio, INITIAL_CAPACITY);
             }
             if (WORKER_CONCUR) {
-                workercommitlist.add(new Thread(new WorkerPrepareThread(worker)));
+                workercommitlist.add(new Thread(new WorkerCommitThread(worker)));
             }
             workerpreparelist.add(new Thread(new WorkerPrepareThread(worker)));
             txngenlist.add(new Thread(new TxnGenThread(txngen)));
@@ -198,7 +198,7 @@ public class Main {
                     e.printStackTrace();
                 }
             } else {
-                while (true) {
+                while (!exit) {
                     worker.startnewtxn();
                 }
             }
