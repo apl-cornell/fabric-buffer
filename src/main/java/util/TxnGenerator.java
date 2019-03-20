@@ -1,11 +1,6 @@
 package util;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.Random;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -125,36 +120,25 @@ public class TxnGenerator {
         // Randomly generate reads
         switch(probtype) {
             case FixedSize:
-                // TODO : Any better way to do this?
-                // Generate sorted distinct random index
-                int size = worker.lastversion.keySet().size();
-                ArrayList<Integer> list = new ArrayList<Integer>();
-                for (int i = 0; i < size; i ++) {
-                    list.add(new Integer(i));
-                }
-                Collections.shuffle(list);
-                LinkedList<Integer> rwlist = new LinkedList<Integer>();
-                for (int i = 0; i < readsize + writesize; i++) {
-                    rwlist.add(list.get(i));
-                }
-                Collections.sort(rwlist);
-                
-                //Pick items from worker.lastversion based on rwlist
-                int i = 0;
-                int num = 0;
+                Set<Long> objects = worker.lastversion.keySet();
+                HashSet<Long> readSet = randomSubset(objects, readsize);
+                HashSet<Long> writeSet = randomSubset(objects, writesize);
+
                 for (long oid : worker.lastversion.keySet()) {
-                    if (i == rwlist.peek()) {
-                        if (num < readsize) {
-                            Util.addToSetMap(reads, worker.location.get(oid), 
-                                    new ObjectVN(oid, worker.lastversion.get(oid)));
-                        } else {
-                            Util.addToSetMap(writes, worker.location.get(oid), 
-                                    new ObjectVN(oid, worker.lastversion.get(oid) + 1));
+                    // these are both O(1)
+                    boolean isRead = readSet.contains(oid);
+                    boolean isWrite = writeSet.contains(oid);
+
+                    if (isRead || isWrite) {
+                        ObjectVN object = new ObjectVN(oid, worker.lastversion.get(oid));
+                        Store location = worker.location.get(oid);
+                        if (isRead) {
+                            Util.addToSetMap(reads,location, object);
                         }
-                        num++;
-                        rwlist.removeFirst();
+                        if (isWrite) {
+                            Util.addToSetMap(writes, location, object);
+                        }
                     }
-                    
                 }
                 break;
                 
@@ -205,5 +189,11 @@ public class TxnGenerator {
     /*type of probability distribution*/
     public enum ProbDis {
         FixedSize, Uniform, Gaussian
+    }
+
+    private <T> HashSet<T> randomSubset(Set<T> set, int size) {
+        List<T> list = new LinkedList<>(set);
+        Collections.shuffle(list);
+        return new HashSet<>(list.subList(0, size));
     }
 }
