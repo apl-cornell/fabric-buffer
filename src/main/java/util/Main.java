@@ -110,6 +110,7 @@ public class Main {
         for (int i = 0; i < STORE_NUM; i++) {
             SmartBuffer buffer = new NumLinkBuffer();
             Store store = new StoreSB(buffer);
+            buffer.setStore(store);
             storelist.add(store);
         }
         
