@@ -42,8 +42,8 @@ public class TxnGenerator {
     
     /* Generate a new unique oid */
     private long generateOid() {
-        tid++;
-        return (tid - 1)*32 + wid;
+        oid++;
+        return (oid - 1)*32 + oid;
     }
     
     /* Ratio of read object and write object */
@@ -51,6 +51,26 @@ public class TxnGenerator {
     private double rwratio;
 
     private static final int TXN_QUEUE_CAPACITY = 10;
+    
+    private Txn initialtxn(int initial_cap) {
+        HashMap<Store, HashSet<ObjectVN>> reads = new HashMap<>();
+        HashMap<Store, HashSet<ObjectVN>> writes = new HashMap<>();
+        
+        for (Store s : worker.storelist) {
+            HashSet<ObjectVN> w = new HashSet<>();
+            for (int i = 0; i < initial_cap; i++) {
+                long noid = generateOid();
+                ObjectVN object = new ObjectVN(noid, 0);
+                w.add(object);
+                worker.location.put(noid, s);
+            }
+            writes.put(s, w);
+        }
+        
+        long ntid = generateTid();
+        Txn initial_txn = new Txn(worker, ntid, reads, writes);
+        return initial_txn;
+    }
 
     public TxnGenerator(Worker worker) {
         this.worker = worker;
@@ -69,10 +89,17 @@ public class TxnGenerator {
         this.writesize = writesize;
         this.tid = 0;
         this.oid = 0;
+        worker.setqueue(queue);
+        try {
+            queue.put(initialtxn(initial_cap));
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
     
     /**/
-    public TxnGenerator(Worker worker, ProbDis probtype, double numObjectratio, double rwratio, int intial_cap) {
+    public TxnGenerator(Worker worker, ProbDis probtype, double numObjectratio, double rwratio, int initial_cap) {
         this.worker = worker;
         this.wid = worker.wid;
         this.queue = new ArrayBlockingQueue<>(TXN_QUEUE_CAPACITY);
@@ -81,6 +108,13 @@ public class TxnGenerator {
         this.rwratio = rwratio;
         this.tid = 0;
         this.oid = 0;
+        worker.setqueue(queue);
+        try {
+            queue.put(initialtxn(initial_cap));
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
     
     /* Generate a new transaction */
