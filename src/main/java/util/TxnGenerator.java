@@ -130,13 +130,12 @@ public class TxnGenerator {
                     boolean isWrite = writeSet.contains(oid);
 
                     if (isRead || isWrite) {
-                        ObjectVN object = new ObjectVN(oid, worker.lastversion.get(oid));
                         Store location = worker.location.get(oid);
-                        if (isRead) {
-                            Util.addToSetMap(reads,location, object);
-                        }
+                        ObjectVN readObject = new ObjectVN(oid, worker.lastversion.get(oid));
+                        Util.addToSetMap(reads,location, readObject);
                         if (isWrite) {
-                            Util.addToSetMap(writes, location, object);
+                            ObjectVN writeObject = new ObjectVN(oid, worker.lastversion.get(oid) + 1);
+                            Util.addToSetMap(writes, location, writeObject);
                         }
                     }
                 }
