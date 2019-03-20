@@ -2,6 +2,7 @@ package util;
 
 import java.util.ArrayList;
 import smartbuffer.*;
+import util.TxnGenerator.ProbDis;
 
 public class Main {
     /*
@@ -44,12 +45,37 @@ public class Main {
     private static final boolean WORKER_CONCUR = false; 
     
     /*
+     * Distribution for random transaction
+     */
+    private static final ProbDis probtype = ProbDis.FixedSize;
+    
+    /*
+     * number of reads in a transaction if probtype is FixedSize.
+     */
+    private static final int readsize = 2;
+    
+    /*
+     * number of writes in a transaction if probtype is FixedSize
+     */
+    private static final int writesize = 1;
+    
+    /* 
+     * Ratio of read object and write object from all object
+     */
+    private static final double numObjectratio = 0.1;
+    
+    /*
+     * Ratio of write objects from all objects in a txn
+     */
+    private static final double rwratio = 0.2;
+    
+    /*
      * Duration of the test.
      */
     private static final int DURATION = 1;
     
     /*
-     * 
+     * End flag of the whole testing
      */
     private boolean exit;
     
@@ -85,7 +111,14 @@ public class Main {
         //Initialize workers
         for (int i = 0; i < WORKER_NUM; i++) {
             Worker worker = new Worker(i, storelist, WORKER_CONCUR);
-            TxnGenerator txngen = new TxnGenerator(worker);
+            TxnGenerator txngen;
+            switch (probtype) {
+                case FixedSize:
+                    txngen = new TxnGenerator(worker, readsize, writesize);
+                    break;
+                default:
+                    txngen = new TxnGenerator(worker,probtype, numObjectratio, rwratio);
+            }
             if (WORKER_CONCUR) {
                 workercommitlist.add(new Thread(new WorkerPrepareThread(worker)));
             }
