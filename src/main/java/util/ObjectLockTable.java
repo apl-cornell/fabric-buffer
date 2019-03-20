@@ -78,12 +78,7 @@ public class ObjectLockTable {
      *         grabbed
      */
     public boolean grabLock(Set<ObjectVN> reads, Set<ObjectVN> writes, Long tid) {
-        Comparator<ObjectVN> compare = new Comparator<ObjectVN>() {
-            @Override
-            public int compare (ObjectVN o1, ObjectVN o2) {
-                return (int)(o1.oid - o2.oid);
-            }
-        };
+        Comparator<ObjectVN> compare = Comparator.comparingLong(o -> o.oid);
         // Sort objects to avoid deadlock
         List<ObjectVN> readlist = new ArrayList<>(reads);
         List<ObjectVN> writelist = new ArrayList<>(writes);
