@@ -22,6 +22,9 @@ public class TxnGenerator {
     
     /*Distribution for transaction*/
     ProbDis probtype;
+
+    /* Generator for transaction sizes */
+    RandomGenerator gen;
     
     /*number of reads in a transaction*/
     private int readsize;
@@ -94,11 +97,11 @@ public class TxnGenerator {
     }
     
     /**/
-    public TxnGenerator(Worker worker, ProbDis probtype, double numObjectratio, double rwratio, int initial_cap) {
+    public TxnGenerator(Worker worker, RandomGenerator gen, double numObjectratio, double rwratio, int initial_cap) {
         this.worker = worker;
         this.wid = worker.wid;
         this.queue = new ArrayBlockingQueue<>(TXN_QUEUE_CAPACITY);
-        this.probtype = probtype;
+        this.gen = gen;
         this.numObjectratio = numObjectratio;
         this.rwratio = rwratio;
         this.tid = 0;
