@@ -100,11 +100,11 @@ public class StoreSB implements Store {
                 }
             }
             
-            //Release Lock
-            locktable.releaseLock(pendingread.get(tid), pending.get(tid), tid);
             //Remove object from the buffer
             buffer.remove(write);
         }
+        //Release Lock
+        locktable.releaseLock(pendingread.get(tid), pending.get(tid), tid);
         pending.remove(tid);
     }
 
