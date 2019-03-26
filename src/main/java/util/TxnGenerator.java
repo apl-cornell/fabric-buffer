@@ -125,25 +125,22 @@ public class TxnGenerator {
             case FixedSize:
                 // make sure the total number of transactions is readsize + writesize
                 Set<Long> objects = worker.lastversion.keySet();
-                HashSet<Long> rwSet = randomSubset(objects, readsize + writesize);
+                List<Long> rwSet = randomSubset(objects, readsize + writesize);
 
                 int writesSoFar = 0;
-                for (long oid : worker.lastversion.keySet()) {
-                    // this is O(1)
-                    if (rwSet.contains(oid)) {
-                        // this is a read or a write
-                        // at the very least, this is a read
-                        Store location = worker.location.get(oid);
-                        ObjectVN readObject = new ObjectVN(oid, worker.lastversion.get(oid));
-                        Util.addToSetMap(reads,location, readObject);
+                for (long oid : rwSet) {
+                    // this is a read or a write
+                    // at the very least, this is a read
+                    Store location = worker.location.get(oid);
+                    ObjectVN readObject = new ObjectVN(oid, worker.lastversion.get(oid));
+                    Util.addToSetMap(reads,location, readObject);
 
-                        // upgrade the first [writesize] transactions to writes
-                        if (writesSoFar < writesize) {
-                            // upgrade to a write
-                            ObjectVN writeObject = new ObjectVN(oid, worker.lastversion.get(oid) + 1);
-                            Util.addToSetMap(writes, location, writeObject);
-                            writesSoFar++;
-                        }
+                    // upgrade the first [writesize] transactions to writes
+                    if (writesSoFar < writesize) {
+                        // upgrade to a write
+                        ObjectVN writeObject = new ObjectVN(oid, worker.lastversion.get(oid) + 1);
+                        Util.addToSetMap(writes, location, writeObject);
+                        writesSoFar++;
                     }
                 }
                 break;
@@ -197,9 +194,19 @@ public class TxnGenerator {
         FixedSize, Uniform, Gaussian
     }
 
-    private <T> HashSet<T> randomSubset(Set<T> set, int size) {
+    /**
+     * Get a random subset of a set with a certain size. The subset is in
+     * random order.
+     *
+     * @param set The set.
+     * @param size The size of the random subset. Cannot be greater than the
+     *             size of {@code set} or less than zero.
+     * @param <T> The type of the set's elements.
+     * @return A random subset of size {@code size}, in random order.
+     */
+    private <T> List<T> randomSubset(Set<T> set, int size) {
         List<T> list = new LinkedList<>(set);
         Collections.shuffle(list);
-        return new HashSet<>(list.subList(0, size));
+        return list.subList(0, size);
     }
 }
