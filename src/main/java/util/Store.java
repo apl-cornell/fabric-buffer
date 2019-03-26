@@ -18,7 +18,7 @@ public interface Store {
      * @return A {@code Future} that resolves in accord with the transaction 
      *           prepare result.
      */
-    Future<Boolean> prepare(long tid,  Set<ObjectVN> reads, Set<ObjectVN> writes);
+    Future<Boolean> prepare(Worker worker, long tid,  Set<ObjectVN> reads, Set<ObjectVN> writes);
     
     /**
      * Abort a transaction.

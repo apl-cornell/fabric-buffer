@@ -46,18 +46,24 @@ public class StoreSB implements Store {
     }
 
     @Override
-    public Future<Boolean> prepare(long tid, Set<ObjectVN> reads, Set<ObjectVN> writes) {
+    public Future<Boolean> prepare(Worker worker, long tid, Set<ObjectVN> reads, Set<ObjectVN> writes) {
         // Check version conflict
         Set<ObjectVN> actualdeps = new HashSet<>();
+        Set<ObjectVN> versionconflict = new HashSet<>();
 
         for (ObjectVN object : reads) {
             // if there is a older version, there is a version conflict and prepare fails.
             if (object.vnum < lastversion.get(object.oid)) {
-                return futurewith(false);
+                versionconflict.add(new ObjectVN(object.oid, lastversion.get(object.oid)));
                 // if there is a version that's never seen, add that to the dependency of this transaction
             } else if (object.vnum > lastversion.get(object.oid)) {
                 actualdeps.add(object);
             }
+        }
+        
+        if (!versionconflict.isEmpty()) {
+            worker.update(versionconflict);
+            return futurewith(false);
         }
 
         Util.addToSetMap(pending, tid, writes);
