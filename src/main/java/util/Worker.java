@@ -2,7 +2,6 @@ package util;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -14,62 +13,62 @@ public class Worker {
      * A map from an object to the last version of the object that the store has seen.
      */
     public ConcurrentHashMap<Long, Long> lastversion;
-    
+
     /*
      * A map from [oid] to RWlock.
      */
     private ObjectLockTable locktable;
-    
+
     /*
      * The set of transactions prepared successfully
      */
     private Set<Txn> prepared;
-    
+
     /*
      * Location of each object
      */
     public HashMap<Long, Store> location;
-    
+
     /*
      * Worker ID.
      */
     public int wid;
-    
+
     /*
      * queue to communicate with txn Generator
      */
     private BlockingQueue<Txn> queue;
-    
+
     /*
      * List of existing stores.
      */
     public List<Store> storelist;
-    
+
     /*
      * Whether worker prepare and commit transactions concurrently.
      */
     private static boolean WORKER_CONCUR;
-    
+
     private ExecutorService pool;
-    
-    
+
+
     public Worker(int wid, List<Store> storelist, boolean concur) {
         lastversion = new ConcurrentHashMap<>();
         locktable = new ObjectLockTable();
-        prepared = (new ConcurrentHashMap<Txn,Integer>()).keySet();
+        prepared = (new ConcurrentHashMap<Txn, Integer>()).keySet();
         location = new HashMap<>();
         this.wid = wid;
         this.storelist = storelist;
         WORKER_CONCUR = concur;
     }
-    
+
     /*
      * Set the queue.
      */
     public void setqueue(BlockingQueue<Txn> queue) {
         this.queue = queue;
     }
-    
+
     /*
      * Update the version number of object.
      */
@@ -78,7 +77,7 @@ public class Worker {
             lastversion.put(write.oid, write.vnum);
         }
     }
-    
+
     /*
      * Add a transaction to the set of prepared transactions.
      */
@@ -90,21 +89,21 @@ public class Worker {
             prepared.add(t);
         }
     }
-    
+
     /*
      * grab locks.
      */
     public boolean grablock(Set<ObjectVN> reads, Set<ObjectVN> writes, Long tid) {
         return locktable.grabLock(reads, writes, tid);
     }
-    
+
     /*
      * release locks.
      */
     public void releaselock(Set<ObjectVN> reads, Set<ObjectVN> writes, Long tid) {
         locktable.releaseLock(reads, writes, tid);
     }
-    
+
     /*
      * add new object
      */
@@ -114,9 +113,9 @@ public class Worker {
             location.put(object.oid, s);
         }
     }
-    
+
     /*
-     * Take a transaction from the generator and prepare the transaction. 
+     * Take a transaction from the generator and prepare the transaction.
      */
     public void startnewtxn() {
         if (WORKER_CONCUR) {
@@ -137,7 +136,7 @@ public class Worker {
             }
         }
     }
-    
+
     /*
      * Take a transaction from prepared and prepare the transaction.
      */
@@ -157,7 +156,7 @@ public class Worker {
                 e.printStackTrace();
             }
         };
-        
+
         if (WORKER_CONCUR) {
             Thread t = new Thread(task);
             t.start();
@@ -165,7 +164,7 @@ public class Worker {
             task.run();
         }
     }
-    
+
     class TxnPrepareThread implements Runnable {
 
         @Override
@@ -180,8 +179,8 @@ public class Worker {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-            
+
         }
-        
+
     }
 }

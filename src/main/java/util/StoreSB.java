@@ -31,9 +31,9 @@ public class StoreSB implements Store {
      * A locktable for object-level lock.
      */
     private ObjectLockTable locktable;
-    
+
     /*
-     * A list of workers.
+     * The list of all workers.
      */
     private List<Worker> workerlist;
 
@@ -50,8 +50,9 @@ public class StoreSB implements Store {
         this.pendingread = new HashMap<>();
         this.locktable = new ObjectLockTable();
     }
-    
-    public void setworkerlist(List<Worker> workerlist) {
+
+    @Override
+    public void setWorkerlist(List<Worker> workerlist) {
         this.workerlist = workerlist;
     }
 
@@ -70,16 +71,16 @@ public class StoreSB implements Store {
                 actualdeps.add(object);
             }
         }
-        
+
         if (!versionconflict.isEmpty()) {
             worker.update(versionconflict);
-            return futurewith(false);
+            return futureWith(false);
         }
 
         Util.addToSetMap(pending, tid, writes);
         if (actualdeps.isEmpty()) {
             // Grab the lock on the store's side
-            return futurewith(locktable.grabLock(reads, writes, tid));
+            return futureWith(locktable.grabLock(reads, writes, tid));
         } else {
             // Result resolved to true if the dependencies of [tid] are resolved. resolved to false only when there is version conflict
             return buffer.add(tid, reads);
@@ -90,8 +91,8 @@ public class StoreSB implements Store {
     public void commit(Worker worker, long tid) {
         for (ObjectVN write : pending.get(tid)) {
             lastversion.put(write.oid, write.vnum);
-            
-            //notify worker if this is a create
+
+            // notify all other workers if this is a create
             if (write.vnum == 0) {
                 for (Worker w : workerlist) {
                     if (w != worker) {
@@ -99,11 +100,11 @@ public class StoreSB implements Store {
                     }
                 }
             }
-            
-            //Remove object from the buffer
+
+            // Remove object from the buffer
             buffer.remove(write);
         }
-        //Release Lock
+        // Release Lock
         locktable.releaseLock(pendingread.get(tid), pending.get(tid), tid);
         pending.remove(tid);
     }
@@ -114,12 +115,19 @@ public class StoreSB implements Store {
         buffer.delete(tid);
     }
 
-    private <T> Future<T> futurewith(T value) {
+    /**
+     * Create an already completed future with a given value.
+     *
+     * @param value The value.
+     * @param <T> The type of the value (and the future).
+     * @return An already completed future with the value {@code value}.
+     */
+    private <T> Future<T> futureWith(T value) {
         return CompletableFuture.completedFuture(value);
     }
 
     @Override
-    public Long getversion(long oid) {
+    public Long getVersion(long oid) {
         return lastversion.get(oid);
     }
 

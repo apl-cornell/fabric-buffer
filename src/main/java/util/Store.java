@@ -42,7 +42,7 @@ public interface Store {
      * @param oid ID of the object
      * @return The version number of the object.
      */
-    Long getversion(long oid);
+    Long getVersion(long oid);
 
     /**
      * Grab the lock for objects that a transaction reads and writes on the 
@@ -58,5 +58,5 @@ public interface Store {
      */
     boolean grabLock(long tid);
     
-    void setworkerlist(List<Worker> workerlist);
+    void setWorkerlist(List<Worker> workerlist);
 }
