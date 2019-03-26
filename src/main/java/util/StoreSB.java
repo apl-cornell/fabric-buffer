@@ -4,6 +4,7 @@ import smartbuffer.SmartBuffer;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -30,6 +31,11 @@ public class StoreSB implements Store {
      * A locktable for object-level lock.
      */
     private ObjectLockTable locktable;
+    
+    /*
+     * A list of workers.
+     */
+    private List<Worker> workerlist;
 
     /**
      * Create a new instance of this class.
@@ -43,6 +49,10 @@ public class StoreSB implements Store {
         this.pending = new HashMap<>();
         this.pendingread = new HashMap<>();
         this.locktable = new ObjectLockTable();
+    }
+    
+    public void setworkerlist(List<Worker> workerlist) {
+        this.workerlist = workerlist;
     }
 
     @Override
@@ -77,9 +87,19 @@ public class StoreSB implements Store {
     }
 
     @Override
-    public void commit(long tid) {
+    public void commit(Worker worker, long tid) {
         for (ObjectVN write : pending.get(tid)) {
             lastversion.put(write.oid, write.vnum);
+            
+            //notify worker if this is a create
+            if (write.vnum == 0) {
+                for (Worker w : workerlist) {
+                    if (w != worker) {
+                        w.addObject(this, write);
+                    }
+                }
+            }
+            
             //Release Lock
             locktable.releaseLock(pendingread.get(tid), pending.get(tid), tid);
             //Remove object from the buffer

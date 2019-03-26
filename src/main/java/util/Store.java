@@ -1,5 +1,6 @@
 package util;
 
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 
@@ -33,7 +34,7 @@ public interface Store {
      * 
      * @param tid The ID of the transaction.
      */
-    void commit(long tid);
+    void commit(Worker worker, long tid);
     
     /**
      * Return the current version of a object.
@@ -56,4 +57,6 @@ public interface Store {
      * grabbed.
      */
     boolean grabLock(long tid);
+    
+    void setworkerlist(List<Worker> workerlist);
 }

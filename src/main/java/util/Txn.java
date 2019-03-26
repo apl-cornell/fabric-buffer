@@ -118,7 +118,7 @@ public class Txn {
         );
         for (Store s : Sets.union(reads.keySet(), writes.keySet())){
             Callable<Void> c = () -> {
-                s.commit(tid);
+                s.commit(worker, tid);
                 return null;
             };
             pool.submit(c);
