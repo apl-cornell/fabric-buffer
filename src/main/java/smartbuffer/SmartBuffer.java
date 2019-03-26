@@ -15,8 +15,11 @@ public interface SmartBuffer {
      * version conflict. A transaction is viewed as resolved if all of its
      * dependencies are resolved.
      *
-     * Note that the store must be set via {@link SmartBuffer#setStore(Store)}
-     * before calling this method.
+     * Preconditions:
+     *  - the store must be set via {@link SmartBuffer#setStore(Store)} before
+     *    calling this method.
+     *  - the transaction ID must exist as a pending transaction in the store
+     *
      *
      * @param tid The ID of the transaction.
      * @param deps A set of <i>all</i> of the transaction's dependencies. It is 
