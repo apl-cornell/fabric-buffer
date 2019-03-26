@@ -9,6 +9,7 @@ import util.Store;
 import util.StoreSB;
 
 import java.util.HashSet;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 abstract class SmartBufferTest {
@@ -19,31 +20,40 @@ abstract class SmartBufferTest {
 
     @Test
     void simpleTest() {
-        buffer.add(5, new HashSet<>());
+        int tid = 5;
+        store.addpending(tid);
+        buffer.add(tid, new HashSet<>());
         // just make sure add works
     }
     
     @Test
     void ejectTest() {
+        store.setversion(new ObjectVN(1,1));
         store.setversion(new ObjectVN(2,1));
-        
+
         HashSet<ObjectVN> deps1 = new HashSet<>();
-        deps.add(new ObjectVN(1,1));
-        deps.add(new ObjectVN(2,1));
+        deps1.add(new ObjectVN(1,1));
+        deps1.add(new ObjectVN(2,1));
+
+        store.addpending(1);
         Future<Boolean> future1 = buffer.add(1, deps1);
-        
+
         HashSet<ObjectVN> deps2 = new HashSet<>();
         deps2.add(new ObjectVN(2, 2));
-        Future<Boolean> future2 = buffer.add(2, deps2);
-        
         store.addpending(2);
+        Future<Boolean> future2 = buffer.add(2, deps2);
+
         store.setversion(new ObjectVN(2, 2));
         buffer.remove(new ObjectVN(2, 2));
-        
-        boolean res1 = future1.get();
-        boolean res2 = future2.get();
-        System.out.println(res1);
-        System.out.println(res2);
+
+        try {
+            boolean res1 = future1.get();
+            boolean res2 = future2.get();
+            System.out.println(res1);
+            System.out.println(res2);
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
     }
 
     @BeforeEach

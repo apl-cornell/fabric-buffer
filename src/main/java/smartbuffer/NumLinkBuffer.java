@@ -26,6 +26,7 @@ public class NumLinkBuffer implements SmartBuffer {
 
     /*
      * A map from a transaction ID to the number of unresolved dependencies.
+     * The keys are synchronized with {@code futures}.
      */
     private HashMap<Long, Integer> numLink;
     
@@ -41,6 +42,7 @@ public class NumLinkBuffer implements SmartBuffer {
     
     /*
      * A map from transactions in the buffer to associated futures to be filled.
+     * The keys are synchronized with {@code numLink}.
      */
     private HashMap<Long, CompletableFuture<Boolean>> futures;
     
@@ -54,9 +56,11 @@ public class NumLinkBuffer implements SmartBuffer {
         // TODO: decide the implementation we want to use
         // Look at performance considerations, as well as whether we care about value ordering or not
         depsMap = new HashMap<>();
+        unresolveddepsMap = new HashMap<>();
         numLink = new HashMap<>();
         objlocktable = new ConcurrentHashMap<>();
         txnlocktable = new ConcurrentHashMap<>();
+        futures = new HashMap<>();
     }
     
     private Lock getObjLock(Long oid) {
@@ -67,7 +71,7 @@ public class NumLinkBuffer implements SmartBuffer {
     
     private Lock getTxnLock(Long tid) {
         Lock lock = new ReentrantLock();
-        Lock existing = objlocktable.putIfAbsent(tid, lock);
+        Lock existing = txnlocktable.putIfAbsent(tid, lock);
         return existing == null? lock : existing;
     }
 
@@ -121,11 +125,13 @@ public class NumLinkBuffer implements SmartBuffer {
                     //If [tid] is not ejected from the buffer
                     if (numLink.containsKey(tid)) {
                         synchronized (getTxnLock(tid)) {
-                            numLink.put(tid, numLink.get(tid) - 1);
-                            if (numLink.get(tid) == 0) {
-                                numLink.remove(tid);
-                                futures.get(tid).complete(store.grabLock(tid));
-                                futures.remove(tid);
+                            if (numLink.containsKey(tid)) {
+                                numLink.put(tid, numLink.get(tid) - 1);
+                                if (numLink.get(tid) == 0) {
+                                    numLink.remove(tid);
+                                    futures.get(tid).complete(store.grabLock(tid));
+                                    futures.remove(tid);
+                                }
                             }
                         }
                     }
@@ -142,9 +148,11 @@ public class NumLinkBuffer implements SmartBuffer {
                 if (object_curr.older(object)) {
                     for (long tid : depsMap.get(object_curr)) {
                         synchronized(getTxnLock(tid)) {
-                            numLink.remove(tid);
-                            futures.get(tid).complete(false);
-                            futures.remove(tid);
+                            if (numLink.containsKey(tid)) {
+                                numLink.remove(tid);
+                                futures.get(tid).complete(false);
+                                futures.remove(tid);
+                            }
                         }
                     }
                     depsMap.remove(object_curr);
@@ -156,6 +164,7 @@ public class NumLinkBuffer implements SmartBuffer {
     
     @Override
     public void delete(long tid) {
+        // TODO: check if tid is in the map
         synchronized (getTxnLock(tid)) {
             numLink.remove(tid);
             futures.remove(tid).complete(false);
