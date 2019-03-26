@@ -60,43 +60,6 @@ public class TxnGenerator {
     public TxnGenerator(Worker worker) {
         this(worker, RandomGenerator.constant(0.5f), 5);
     }
-    
-//    /* Construct a txnGenerator for fixed size transactions  */
-//    public TxnGenerator(Worker worker, int readsize, int writesize, int initial_cap) {
-//        this.worker = worker;
-//        this.wid = worker.wid;
-//        this.queue = new ArrayBlockingQueue<>(TXN_QUEUE_CAPACITY);
-//        this.readsize = readsize;
-//        this.writesize = writesize;
-//        this.tid = 0;
-//        this.oid = 0;
-//        worker.setqueue(queue);
-//        try {
-//            queue.put(initialtxn(initial_cap));
-//        } catch (InterruptedException e) {
-//            // TODO Auto-generated catch block
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    /**/
-//    public TxnGenerator(Worker worker, RandomGenerator gen, double numObjectratio, double rwratio, int initial_cap) {
-//        this.worker = worker;
-//        this.wid = worker.wid;
-//        this.queue = new ArrayBlockingQueue<>(TXN_QUEUE_CAPACITY);
-//        this.gen = gen;
-//        this.numObjectratio = numObjectratio;
-//        this.rwratio = rwratio;
-//        this.tid = 0;
-//        this.oid = 0;
-//        worker.setqueue(queue);
-//        try {
-//            queue.put(initialtxn(initial_cap));
-//        } catch (InterruptedException e) {
-//            // TODO Auto-generated catch block
-//            e.printStackTrace();
-//        }
-//    }
 
     public TxnGenerator(Worker worker, RandomGenerator gen, int initialCap) {
         this.worker = worker;
