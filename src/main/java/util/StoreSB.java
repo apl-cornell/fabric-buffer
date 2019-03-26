@@ -127,4 +127,15 @@ public class StoreSB implements Store {
     public boolean grabLock(long tid) {
         return locktable.grabLock(pendingread.get(tid), pending.get(tid), tid);
     }
+    
+    @Override
+    public void setversion(ObjectVN object) {
+        this.lastversion.put(object.oid, object.vnum);
+    }
+    
+    @Override
+    public void addpending(long tid) {
+        pendingread.put(tid, new HashSet<>());
+        pending.put(tid, new HashSet<>());
+    }
 }

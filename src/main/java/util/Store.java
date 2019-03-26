@@ -59,4 +59,10 @@ public interface Store {
     boolean grabLock(long tid);
     
     void setworkerlist(List<Worker> workerlist);
+    
+    /*--------------------------For testing only----------------------------*/
+    
+    void setversion(ObjectVN object);
+    
+    void addpending(long tid);
 }
