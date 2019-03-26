@@ -79,10 +79,10 @@ public class NumLinkBuffer implements SmartBuffer {
         }
         for (ObjectVN object : deps) {
             synchronized (getObjLock(object.oid)) {
-                if (store.getversion(object.oid) > object.vnum) {
+                if (store.getVersion(object.oid) > object.vnum) {
                     //Version Conflict
                     future.complete(false);
-                } else if (store.getversion(object.oid) < object.vnum) {
+                } else if (store.getVersion(object.oid) < object.vnum) {
                     Util.addToSetMap(unresolveddepsMap, object, tid);
                     Util.addToSetMap(depsMap, object, tid);
                     synchronized (getTxnLock(tid)) {

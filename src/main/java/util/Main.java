@@ -43,9 +43,9 @@ public class Main {
      * successful, worker commit the transaction immediately. Only one 
      * transaction is being prepared.
      */
-    private static final boolean WORKER_CONCUR = false; 
+    private static final boolean WORKER_CONCUR = false;
     
-    
+
     /*
      * number of reads in a transaction if probtype is FixedSize.
      */
@@ -127,9 +127,9 @@ public class Main {
         
         //Update worker list for each store
         for (int i = 0; i < STORE_NUM; i++) {
-            storelist.get(i).setworkerlist(workerlist);
+            storelist.get(i).setWorkerlist(workerlist);
         }
-        
+
         //Start txngen thread and worker thread
         for (int i = 0; i < WORKER_NUM; i++) {
             txngenlist.get(i).start();

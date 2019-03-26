@@ -76,7 +76,7 @@ public class TxnGenerator {
             e.printStackTrace();
         }
     }
-    
+
     /* Generate a new transaction */
     public void newTxn() {
         HashMap<Store, HashSet<ObjectVN>> reads = new HashMap<>();
