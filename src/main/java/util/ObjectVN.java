@@ -34,4 +34,26 @@ public class ObjectVN {
     public boolean older(ObjectVN object) {
         return (this.oid == object.oid && this.vnum < object.vnum);
     }
+
+    @Override
+    public String toString() {
+        return String.format("Object %d: v%d", oid, vnum);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof ObjectVN) {
+            ObjectVN objectVN = (ObjectVN) o;
+            return this.oid == objectVN.oid && this.vnum == objectVN.vnum;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (oid ^ (oid >>> 32));
+        result = 31 * result + (int) (vnum ^ (vnum >>> 32));
+        return result;
+    }
 }
