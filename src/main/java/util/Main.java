@@ -42,12 +42,7 @@ public class Main {
      * successful, worker commit the transaction immediately. Only one 
      * transaction is being prepared.
      */
-    private static final boolean WORKER_CONCUR = false; 
-    
-    /*
-     * Distribution for random transaction
-     */
-    private static final ProbDis probtype = ProbDis.FixedSize;
+    private static final boolean WORKER_CONCUR = false;
     
     /*
      * number of reads in a transaction if probtype is FixedSize.
