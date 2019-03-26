@@ -2,7 +2,6 @@ package util;
 
 import java.util.ArrayList;
 import smartbuffer.*;
-import util.TxnGenerator.ProbDis;
 
 public class Main {
     /*
