@@ -118,13 +118,7 @@ public class Main {
         for (int i = 0; i < WORKER_NUM; i++) {
             Worker worker = new Worker(i, storelist, WORKER_CONCUR);
             TxnGenerator txngen;
-            switch (probtype) {
-                case FixedSize:
-                    txngen = new TxnGenerator(worker,readsize, writesize,INITIAL_CAPACITY);
-                    break;
-                default:
-                    txngen = new TxnGenerator(worker,probtype, numObjectratio, rwratio, INITIAL_CAPACITY);
-            }
+            txngen = new TxnGenerator(worker, RandomGenerator.constant(0.5f), INITIAL_CAPACITY);
             if (WORKER_CONCUR) {
                 workercommitlist.add(new Thread(new WorkerCommitThread(worker)));
             }
