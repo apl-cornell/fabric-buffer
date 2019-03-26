@@ -1,5 +1,6 @@
 package util;
 
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 
@@ -18,7 +19,7 @@ public interface Store {
      * @return A {@code Future} that resolves in accord with the transaction 
      *           prepare result.
      */
-    Future<Boolean> prepare(long tid,  Set<ObjectVN> reads, Set<ObjectVN> writes);
+    Future<Boolean> prepare(Worker worker, long tid,  Set<ObjectVN> reads, Set<ObjectVN> writes);
     
     /**
      * Abort a transaction.
@@ -33,7 +34,7 @@ public interface Store {
      * 
      * @param tid The ID of the transaction.
      */
-    void commit(long tid);
+    void commit(Worker worker, long tid);
     
     /**
      * Return the current version of a object.
@@ -56,4 +57,6 @@ public interface Store {
      * grabbed.
      */
     boolean grabLock(long tid);
+    
+    void setworkerlist(List<Worker> workerlist);
 }

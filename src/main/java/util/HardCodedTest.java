@@ -132,6 +132,14 @@ public class HardCodedTest {
             }
             tid++;
         }
+        
+      //Start worker thread
+        for (int i = 0; i < WORKER_NUM; i++) {
+            workerpreparelist.get(i).start();
+            if (WORKER_CONCUR) {
+                workercommitlist.get(i).start();
+            }
+        }
     }
     
     /*

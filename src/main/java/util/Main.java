@@ -1,6 +1,8 @@
 package util;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
+
 import smartbuffer.*;
 
 public class Main {
@@ -43,6 +45,7 @@ public class Main {
      */
     private static final boolean WORKER_CONCUR = false;
     
+
     /*
      * number of reads in a transaction if probtype is FixedSize.
      */
@@ -108,9 +111,11 @@ public class Main {
             storelist.add(store);
         }
         
+        LinkedList<Worker> workerlist = new LinkedList<>();
         //Initialize workers
         for (int i = 0; i < WORKER_NUM; i++) {
             Worker worker = new Worker(i, storelist, WORKER_CONCUR);
+            workerlist.add(worker);
             TxnGenerator txngen;
             txngen = new TxnGenerator(worker, RandomGenerator.constant(0.5f), INITIAL_CAPACITY);
             if (WORKER_CONCUR) {
@@ -120,6 +125,11 @@ public class Main {
             txngenlist.add(new Thread(new TxnGenThread(txngen)));
         }
         
+        //Update worker list for each store
+        for (int i = 0; i < STORE_NUM; i++) {
+            storelist.get(i).setworkerlist(workerlist);
+        }
+
         //Start txngen thread and worker thread
         for (int i = 0; i < WORKER_NUM; i++) {
             txngenlist.get(i).start();

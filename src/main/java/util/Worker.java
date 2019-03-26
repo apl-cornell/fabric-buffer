@@ -13,7 +13,7 @@ public class Worker {
     /*
      * A map from an object to the last version of the object that the store has seen.
      */
-    public HashMap<Long, Long> lastversion;
+    public ConcurrentHashMap<Long, Long> lastversion;
     
     /*
      * A map from [oid] to RWlock.
@@ -54,7 +54,7 @@ public class Worker {
     
     
     public Worker(int wid, List<Store> storelist, boolean concur) {
-        lastversion = new HashMap<>();
+        lastversion = new ConcurrentHashMap<>();
         locktable = new ObjectLockTable();
         prepared = (new ConcurrentHashMap<Txn,Integer>()).keySet();
         location = new HashMap<>();
@@ -103,6 +103,16 @@ public class Worker {
      */
     public void releaselock(Set<ObjectVN> reads, Set<ObjectVN> writes, Long tid) {
         locktable.releaseLock(reads, writes, tid);
+    }
+    
+    /*
+     * add new object
+     */
+    public void addObject(Store s, ObjectVN object) {
+        if (!lastversion.containsKey(object.oid)) {
+            lastversion.put(object.oid, object.vnum);
+            location.put(object.oid, s);
+        }
     }
     
     /*
