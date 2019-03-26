@@ -2,7 +2,6 @@ package util;
 
 import java.util.ArrayList;
 import smartbuffer.*;
-import util.TxnGenerator.ProbDis;
 
 public class Main {
     /*
@@ -44,10 +43,6 @@ public class Main {
      */
     private static final boolean WORKER_CONCUR = false; 
     
-    /*
-     * Distribution for random transaction
-     */
-    private static final ProbDis probtype = ProbDis.FixedSize;
     
     /*
      * number of reads in a transaction if probtype is FixedSize.
