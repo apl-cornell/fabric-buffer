@@ -40,6 +40,13 @@ abstract class SmartBufferTest {
         store.addpending(1);
         Future<Boolean> future1 = buffer.add(1, deps1);
 
+        try {
+            boolean res1 = future1.get();
+            assertTrue(res1);
+        } catch (InterruptedException | ExecutionException e){
+            e.printStackTrace();
+        }
+
         HashSet<ObjectVN> deps2 = new HashSet<>();
         deps2.add(new ObjectVN(2, 2));
         store.addpending(2);
@@ -49,9 +56,7 @@ abstract class SmartBufferTest {
         buffer.remove(new ObjectVN(2, 2));
 
         try {
-            boolean res1 = future1.get();
             boolean res2 = future2.get();
-            assertTrue(res1);
             assertTrue(res2);
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
