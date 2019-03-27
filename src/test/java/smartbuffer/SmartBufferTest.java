@@ -27,7 +27,7 @@ abstract class SmartBufferTest {
     }
     
     @Test
-    void ejectTest() {
+    void removeTest() {
         store.setversion(new ObjectVN(1,1));
         store.setversion(new ObjectVN(2,1));
 
@@ -49,8 +49,38 @@ abstract class SmartBufferTest {
         try {
             boolean res1 = future1.get();
             boolean res2 = future2.get();
-            System.out.println(res1);
-            System.out.println(res2);
+            assert res1;
+            assert res2;
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    void ejectTest() {
+        store.setversion(new ObjectVN(1,0));
+        store.setversion(new ObjectVN(2,1));
+
+        HashSet<ObjectVN> deps1 = new HashSet<>();
+        deps1.add(new ObjectVN(1,1));
+        deps1.add(new ObjectVN(2,1));
+
+        store.addpending(1);
+        Future<Boolean> future1 = buffer.add(1, deps1);
+
+        HashSet<ObjectVN> deps2 = new HashSet<>();
+        deps2.add(new ObjectVN(2, 2));
+        store.addpending(2);
+        Future<Boolean> future2 = buffer.add(2, deps2);
+
+        store.setversion(new ObjectVN(2, 2));
+        buffer.remove(new ObjectVN(2, 2));
+
+        try {
+            boolean res1 = future1.get();
+            boolean res2 = future2.get();
+            assert !res1;
+            assert res2;
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
