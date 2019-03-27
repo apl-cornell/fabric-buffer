@@ -107,11 +107,13 @@ public class StoreSB implements Store {
         // Release Lock
         locktable.releaseLock(pendingread.get(tid), pending.get(tid), tid);
         pending.remove(tid);
+        pendingread.remove(tid);
     }
 
     @Override
     public void abort(long tid) {
         pending.remove(tid);
+        pendingread.remove(tid);
         buffer.delete(tid);
     }
 

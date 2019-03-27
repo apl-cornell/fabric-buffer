@@ -69,7 +69,7 @@ public class Main {
     /*
      * Duration of the test.
      */
-    private static final int DURATION = 1;
+    private static final int DURATION = 20;
     
     /*
      * Initial capacity of the store of each worker for each store
