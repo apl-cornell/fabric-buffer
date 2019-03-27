@@ -19,7 +19,7 @@ public class Main {
     /*
      * Intervals for Transaction Generators to generate new transaction.
      */
-    private static final int NEW_TRANS_INV = 1;
+    private static final int NEW_TRANS_INV = 0;
     
     /*
      * Intervals for worker to start a new txn. Only used when WORKER_CONCUR is
@@ -81,7 +81,7 @@ public class Main {
     private ArrayList<Thread> txngenlist;
     
     
-    public void main(String args[]) {
+    public void newTest(String[] args) {
         //Initialize fields
         storelist = new ArrayList<>();
         workerpreparelist = new ArrayList<>();
@@ -213,5 +213,9 @@ public class Main {
                 e.printStackTrace();
             }
         }
+    }
+
+    public static void main(String[] args) {
+        (new Main()).newTest(args);
     }
 }
