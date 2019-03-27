@@ -5,6 +5,7 @@ import smartbuffer.SmartBuffer;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class StoreSB extends Store {
     private SmartBuffer buffer;
@@ -17,12 +18,12 @@ public class StoreSB extends Store {
     /*
      * A map from [tid] to objects that transaction writes for transactions waiting for processing.
      */
-    private HashMap<Long, HashSet<ObjectVN>> pending;
+    private ConcurrentHashMap<Long, HashSet<ObjectVN>> pending;
 
     /*
      * A map from [tid] to objects that transaction reads for transactions waiting for processing.
      */
-    private HashMap<Long, HashSet<ObjectVN>> pendingread;
+    private ConcurrentHashMap<Long, HashSet<ObjectVN>> pendingread;
 
     /*
      * A locktable for object-level lock.
@@ -43,8 +44,8 @@ public class StoreSB extends Store {
     public StoreSB(SmartBuffer buffer) {
         this.buffer = buffer;
         this.lastversion = new HashMap<>();
-        this.pending = new HashMap<>();
-        this.pendingread = new HashMap<>();
+        this.pending = new ConcurrentHashMap<>();
+        this.pendingread = new ConcurrentHashMap<>();
         this.locktable = new ObjectLockTable();
     }
 
@@ -58,6 +59,14 @@ public class StoreSB extends Store {
         // Check version conflict
         Set<ObjectVN> actualdeps = new HashSet<>();
         Set<ObjectVN> versionconflict = new HashSet<>();
+
+        if (reads == null){
+            reads = new HashSet<>();
+        }
+
+        if (writes == null){
+            writes = new HashSet<>();
+        }
 
         for (ObjectVN object : reads) {
             // if there is a older version, there is a version conflict and prepare fails.
@@ -76,6 +85,7 @@ public class StoreSB extends Store {
 
         Util.addToSetMap(pending, tid, writes);
         Util.addToSetMap(pendingread, tid, reads);
+
         if (actualdeps.isEmpty()) {
             // Grab the lock on the store's side
             return futureWith(locktable.grabLock(reads, writes, tid));
@@ -150,5 +160,10 @@ public class StoreSB extends Store {
     @Override
     public int pending() {
         return pending.size();
+    }
+
+    @Override
+    public int numLink(){
+        return buffer.numLink();
     }
 }

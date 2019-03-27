@@ -76,4 +76,6 @@ public interface SmartBuffer {
      * @param store The store to assign.
      */
     void setStore(Store store);
+
+    int numLink();
 }

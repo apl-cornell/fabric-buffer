@@ -1,9 +1,6 @@
 package util;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -49,17 +46,24 @@ public class Worker {
      */
     private static boolean WORKER_CONCUR;
 
-    private ExecutorService pool;
+    /*
+     * The number of transactions committed by this worker.
+     */
+    private int num_commits;
+
+    private int num_aborts;
 
 
     public Worker(int wid, List<Store> storelist, boolean concur) {
         lastversion = new ConcurrentHashMap<>();
         locktable = new ObjectLockTable();
-        prepared = (new ConcurrentHashMap<Txn, Integer>()).keySet();
+        prepared = ConcurrentHashMap.newKeySet();
         location = new HashMap<>();
         this.wid = wid;
         this.storelist = storelist;
         WORKER_CONCUR = concur;
+        num_commits = 0;
+        num_aborts = 0;
     }
 
     /*
@@ -82,11 +86,13 @@ public class Worker {
      * Add a transaction to the set of prepared transactions.
      */
     public void addPrepared(Txn t) {
-        if (prepared.isEmpty()) {
-            prepared.add(t);
-            prepared.notify();
-        } else {
-            prepared.add(t);
+        synchronized (prepared) {
+            if (prepared.isEmpty()) {
+                prepared.add(t);
+                prepared.notify();
+            } else {
+                prepared.add(t);
+            }
         }
     }
 
@@ -127,8 +133,11 @@ public class Worker {
                 boolean res = newtxn.prepare();
                 if (res) {
                     newtxn.commit();
+                    num_commits++;
                 } else {
                     // TODO : Handle version conflict
+                    newtxn.abort();
+                    num_aborts++;
                 }
             } catch (InterruptedException e) {
                 // TODO Auto-generated catch block
@@ -143,13 +152,15 @@ public class Worker {
     public void committxn() {
         Runnable task = () -> {
             try {
-                while (prepared.isEmpty()) {
-                    prepared.wait();
-                }
-                for (Txn newtxn : prepared) {
-                    newtxn.commit();
-                    prepared.remove(newtxn);
-                    break;
+                synchronized (prepared){
+                    while (prepared.isEmpty()) {
+                        prepared.wait();
+                    }
+                    for (Txn newtxn : prepared) {
+                        newtxn.commit();
+                        prepared.remove(newtxn);
+                        break;
+                    }
                 }
             } catch (InterruptedException e) {
                 // TODO Auto-generated catch block
@@ -182,5 +193,10 @@ public class Worker {
 
         }
 
+    }
+
+    @Override
+    public String toString(){
+        return String.format("This worker completed %d transactions, aborted %d transactions", num_commits, num_aborts);
     }
 }

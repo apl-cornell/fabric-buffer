@@ -48,7 +48,7 @@ public class Main {
     /*
      * Duration of the test.
      */
-    private static final int DURATION = 20;
+    private static final int DURATION = 5000;
     
     /*
      * Initial capacity of the store of each worker for each store
@@ -133,6 +133,16 @@ public class Main {
         }
         
         exit = true;
+
+        for (Store s : storelist){
+            System.out.println(s);
+        }
+
+        for (Worker w : workerlist) {
+            System.out.println(w);
+        }
+
+        System.exit(0);
     }
     
     /*

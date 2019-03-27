@@ -167,12 +167,19 @@ public class NumLinkBuffer implements SmartBuffer {
         // TODO: check if tid is in the map
         synchronized (getTxnLock(tid)) {
             numLink.remove(tid);
-            futures.remove(tid).complete(false);
+            if (futures.containsKey(tid)){
+                futures.remove(tid).complete(false);
+            }
         }
     }
 
     @Override
     public void setStore(Store store) {
         this.store = store;
+    }
+
+    @Override
+    public int numLink(){
+        return numLink.size();
     }
 }

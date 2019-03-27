@@ -104,7 +104,7 @@ public class ObjectLock {
      * @param tid ID of the transaction
      */
     public synchronized void releasewrite(Long tid) {
-        if (this.writelockholder.equals(tid)) {
+        if (this.writelockholder != null && this.writelockholder.equals(tid)) {
             this.writelockholder = null;
         }
     }

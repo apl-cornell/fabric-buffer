@@ -1,5 +1,6 @@
 package util;
 
+import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -73,9 +74,11 @@ public abstract class Store {
      */
     public abstract int pending();
 
+    public abstract int numLink();
+
     @Override
     public String toString() {
-        return String.format("Store with %d pending transactions", pending());
+        return String.format("Store with %d pending transactions and %d transactions in buffer", pending(), numLink());
     }
 
     /*--------------------------For testing only----------------------------*/

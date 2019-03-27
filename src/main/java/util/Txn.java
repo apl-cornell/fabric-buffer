@@ -100,6 +100,11 @@ public class Txn {
     }
     
     public void abort() {
+        //abort the transaction in every store
+        for (Store s : Sets.union(reads.keySet(), writes.keySet())){
+            s.abort(this.tid);
+        }
+
         //Release lock on the worker's side
         worker.releaselock(
                 new HashSet<>(Util.getSetMapValues(reads)),
