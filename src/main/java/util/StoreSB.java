@@ -78,6 +78,7 @@ public class StoreSB implements Store {
         }
 
         Util.addToSetMap(pending, tid, writes);
+        Util.addToSetMap(pendingread, tid, reads);
         if (actualdeps.isEmpty()) {
             // Grab the lock on the store's side
             return futureWith(locktable.grabLock(reads, writes, tid));
