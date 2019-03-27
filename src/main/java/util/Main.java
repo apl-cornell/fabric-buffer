@@ -127,7 +127,7 @@ public class Main {
         
         //Update worker list for each store
         for (int i = 0; i < STORE_NUM; i++) {
-            storelist.get(i).setWorkerlist(workerlist);
+            storelist.get(i).setWorkers(workerlist);
         }
 
         //Start txngen thread and worker thread

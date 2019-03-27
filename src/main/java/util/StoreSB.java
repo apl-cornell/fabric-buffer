@@ -2,10 +2,7 @@ package util;
 
 import smartbuffer.SmartBuffer;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
@@ -33,9 +30,9 @@ public class StoreSB extends Store {
     private ObjectLockTable locktable;
 
     /*
-     * The list of all workers.
+     * The collection of all workers.
      */
-    private List<Worker> workerlist;
+    private Collection<Worker> workers;
 
     /**
      * Create a new instance of this class.
@@ -52,8 +49,8 @@ public class StoreSB extends Store {
     }
 
     @Override
-    public void setWorkerlist(List<Worker> workerlist) {
-        this.workerlist = workerlist;
+    public void setWorkers(Collection<Worker> workers) {
+        this.workers = workers;
     }
 
     @Override
@@ -95,7 +92,7 @@ public class StoreSB extends Store {
 
             // notify all other workers if this is a create
             if (write.vnum == 0) {
-                for (Worker w : workerlist) {
+                for (Worker w : workers) {
                     if (w != worker) {
                         w.addObject(this, write);
                     }

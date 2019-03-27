@@ -1,5 +1,6 @@
 package util;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -57,8 +58,13 @@ public abstract class Store {
      * grabbed.
      */
     public abstract boolean grabLock(long tid);
-    
-    public abstract void setWorkerlist(List<Worker> workerlist);
+
+    /**
+     * Set the collection of workers that are connected to the store.
+     *
+     * @param workers The workers.
+     */
+    public abstract void setWorkers(Collection<Worker> workers);
 
     /**
      * Get the number of pending transactions in the store.
