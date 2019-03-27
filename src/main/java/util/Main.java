@@ -45,27 +45,6 @@ public class Main {
      */
     private static final boolean WORKER_CONCUR = false;
     
-
-    /*
-     * number of reads in a transaction if probtype is FixedSize.
-     */
-    private static final int readsize = 2;
-    
-    /*
-     * number of writes in a transaction if probtype is FixedSize
-     */
-    private static final int writesize = 1;
-    
-    /* 
-     * Ratio of read object and write object from all object
-     */
-    private static final double numObjectratio = 0.1;
-    
-    /*
-     * Ratio of write objects from all objects in a txn
-     */
-    private static final double rwratio = 0.2;
-    
     /*
      * Duration of the test.
      */
@@ -103,6 +82,13 @@ public class Main {
     
     
     public void main(String args[]) {
+        //Initialize fields
+        storelist = new ArrayList<>();
+        workerpreparelist = new ArrayList<>();
+        workercommitlist = new ArrayList<>();
+        txngenlist = new ArrayList<>();
+
+
         //Initialize stores
         for (int i = 0; i < STORE_NUM; i++) {
             SmartBuffer buffer = new NumLinkBuffer();
