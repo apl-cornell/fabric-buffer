@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
-public class StoreSB implements Store {
+public class StoreSB extends Store {
     private SmartBuffer buffer;
 
     /*
@@ -25,7 +25,7 @@ public class StoreSB implements Store {
     /*
      * A map from [tid] to objects that transaction reads for transactions waiting for processing.
      */
-    private HashMap<Long, HashSet<ObjectVN>> pendingread; // TODO: make sure we add to this at some point
+    private HashMap<Long, HashSet<ObjectVN>> pendingread;
 
     /*
      * A locktable for object-level lock.
@@ -148,5 +148,10 @@ public class StoreSB implements Store {
     public void addpending(long tid) {
         pendingread.put(tid, new HashSet<>());
         pending.put(tid, new HashSet<>());
+    }
+
+    @Override
+    public int pending() {
+        return pending.size();
     }
 }
