@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 
-public interface Store {
+public abstract class Store {
     /**
      * Prepare for a transaction. This method will return a {@code Future} that 
      * resolves with {@code true} if the transaction prepares successfully, and 
@@ -19,14 +19,14 @@ public interface Store {
      * @return A {@code Future} that resolves in accord with the transaction 
      *           prepare result.
      */
-    Future<Boolean> prepare(Worker worker, long tid,  Set<ObjectVN> reads, Set<ObjectVN> writes);
+    public abstract Future<Boolean> prepare(Worker worker, long tid, Set<ObjectVN> reads, Set<ObjectVN> writes);
     
     /**
      * Abort a transaction.
      * 
      * @param tid The ID of the transaction.
      */
-    void abort(long tid);
+    public abstract void abort(long tid);
     
     /**
      * Commit a transaction. The version of objects in the store is updated 
@@ -34,7 +34,7 @@ public interface Store {
      * 
      * @param tid The ID of the transaction.
      */
-    void commit(Worker worker, long tid);
+    public abstract void commit(Worker worker, long tid);
     
     /**
      * Return the current version of a object.
@@ -42,7 +42,7 @@ public interface Store {
      * @param oid ID of the object
      * @return The version number of the object.
      */
-    Long getVersion(long oid);
+    public abstract Long getVersion(long oid);
 
     /**
      * Grab the lock for objects that a transaction reads and writes on the 
@@ -56,13 +56,25 @@ public interface Store {
      * @return A boolean in accord with whether all locks are successfully 
      * grabbed.
      */
-    boolean grabLock(long tid);
+    public abstract boolean grabLock(long tid);
     
-    void setWorkerlist(List<Worker> workerlist);
-    
+    public abstract void setWorkerlist(List<Worker> workerlist);
+
+    /**
+     * Get the number of pending transactions in the store.
+     *
+     * @return The number of pending transactions.
+     */
+    public abstract int pending();
+
+    @Override
+    public String toString() {
+        return String.format("Store with %d pending transactions", pending());
+    }
+
     /*--------------------------For testing only----------------------------*/
     
-    void setversion(ObjectVN object);
+    public abstract void setversion(ObjectVN object);
     
-    void addpending(long tid);
+    public abstract void addpending(long tid);
 }

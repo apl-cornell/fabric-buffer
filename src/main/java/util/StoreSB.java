@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
-public class StoreSB implements Store {
+public class StoreSB extends Store {
     private SmartBuffer buffer;
 
     /*
@@ -150,7 +150,7 @@ public class StoreSB implements Store {
     }
 
     @Override
-    public String toString() {
-        return String.format("Store with %d pending transactions", pending.size());
+    public int pending() {
+        return pending.size();
     }
 }
