@@ -3,7 +3,6 @@ package smartbuffer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import util.ObjectVN;
 import util.Store;
 import util.StoreSB;
@@ -11,6 +10,9 @@ import util.StoreSB;
 import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 abstract class SmartBufferTest {
     private SmartBuffer buffer;
@@ -49,8 +51,8 @@ abstract class SmartBufferTest {
         try {
             boolean res1 = future1.get();
             boolean res2 = future2.get();
-            assert res1;
-            assert res2;
+            assertTrue(res1);
+            assertTrue(res2);
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
@@ -79,8 +81,8 @@ abstract class SmartBufferTest {
         try {
             boolean res1 = future1.get();
             boolean res2 = future2.get();
-            assert !res1;
-            assert res2;
+            assertFalse(res1);
+            assertTrue(res2);
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
