@@ -52,7 +52,7 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
     /*
      * A map from the object ID to the version number of the object in the buffer.
      */
-    private ConcurrentHashMap<Long, Long> inbufferversion;
+    private ConcurrentHashMap<Long, HashSet<Long>> inbufferversion;
 
     public OptimizedNumLinkBuffer() {
         depsMap = new ConcurrentHashMap<>();
@@ -107,7 +107,7 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
                 } else {
                     Util.addToSetMap(depsMap, object, tid);
                 }
-                inbufferversion.put(object.oid, object.vnum);
+                Util.addToSetMap(inbufferversion, object.oid, object.vnum);
             }
         }
         synchronized (getTxnLock(tid)) {
@@ -136,15 +136,10 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
                         if (numLink.get(tid) == 0) {
                             numLink.remove(tid);
                             CompletableFuture<Boolean> future = futures.get(tid);
-                            try {
-                                numLink.remove(tid);
-                                future.complete(store.grabLock(tid));
-                                futures.remove(tid);
-                            } catch (NullPointerException e){
-                                System.out.println(future);
-                                throw e;
-                            }
-
+                            numLink.remove(tid);
+                            future.complete(store.grabLock(tid));
+                            futures.remove(tid);
+                            depsMap.remove(tid);
                         }
                     }
                 }
@@ -157,18 +152,25 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
     public void eject(ObjectVN object) {
         synchronized (getObjLock(object.oid)) {
             if (inbufferversion.containsKey(object.oid)) {
-                ObjectVN object_curr = new ObjectVN(object.oid, inbufferversion.get(object.oid));
-                if (object_curr.older(object) && depsMap.containsKey(object_curr)) {
-                    for (long tid : depsMap.get(object_curr)) {
-                        synchronized (getTxnLock(tid)) {
-                            if (numLink.containsKey(tid)) {
-                                numLink.remove(tid);
-                                futures.get(tid).complete(false);
-                                futures.remove(tid);
+                Long to_remove = (-1l);
+                for (Long vnum : inbufferversion.get(object.oid)){
+                    if (vnum < object.vnum){
+                        ObjectVN object_curr = new ObjectVN(object.oid, vnum);
+                        for (long tid : depsMap.get(object_curr)) {
+                            synchronized (getTxnLock(tid)) {
+                                if (numLink.containsKey(tid)) {
+                                    numLink.remove(tid);
+                                    futures.get(tid).complete(false);
+                                    futures.remove(tid);
+                                }
                             }
                         }
+                        depsMap.remove(object_curr);
+                        to_remove = vnum;
                     }
-                    depsMap.remove(object_curr);
+                }
+                if (to_remove >= 0){
+                    inbufferversion.remove(to_remove);
                 }
             }
         }

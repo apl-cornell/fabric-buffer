@@ -43,7 +43,7 @@ public class Main {
      * successful, worker commit the transaction immediately. Only one 
      * transaction is being prepared.
      */
-    private static final boolean WORKER_CONCUR = true;
+    private static final boolean WORKER_CONCUR = false;
     
     /*
      * Duration of the test.
@@ -91,7 +91,7 @@ public class Main {
 
         //Initialize stores
         for (int i = 0; i < STORE_NUM; i++) {
-            SmartBuffer buffer = new NumLinkBuffer();
+            SmartBuffer buffer = new OptimizedNumLinkBuffer();
             Store store = new StoreSB(buffer);
             buffer.setStore(store);
             storelist.add(store);
