@@ -84,8 +84,11 @@ abstract class SmartBufferTest {
         buffer.remove(new ObjectVN(2, 2));
 
         try {
+            System.out.println("hello");
             boolean res1 = future1.get();
+            System.out.println(res1);
             boolean res2 = future2.get();
+            System.out.println(res2);
             assertFalse(res1);
             assertTrue(res2);
         } catch (InterruptedException | ExecutionException e) {

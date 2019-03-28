@@ -156,9 +156,9 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
     @Override
     public void eject(ObjectVN object) {
         synchronized (getObjLock(object.oid)) {
-            if (inbufferversion.get(object.oid) != null) {
+            if (inbufferversion.containsKey(object.oid)) {
                 ObjectVN object_curr = new ObjectVN(object.oid, inbufferversion.get(object.oid));
-                if (object_curr.older(object) && depsMap.contains(object_curr)) {
+                if (object_curr.older(object) && depsMap.containsKey(object_curr)) {
                     for (long tid : depsMap.get(object_curr)) {
                         synchronized (getTxnLock(tid)) {
                             if (numLink.containsKey(tid)) {
