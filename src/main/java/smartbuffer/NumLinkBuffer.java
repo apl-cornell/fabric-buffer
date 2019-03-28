@@ -81,12 +81,18 @@ public class NumLinkBuffer implements SmartBuffer {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         synchronized (getTxnLock(tid)) {
             numLink.put(tid, 0);
+            futures.put(tid, future);
         }
         for (ObjectVN object : deps) {
             synchronized (getObjLock(object.oid)) {
                 if (store.getVersion(object.oid) > object.vnum) {
                     //Version Conflict
-                    future.complete(false);
+                    synchronized (getTxnLock(tid)){
+                        numLink.remove(tid);
+                        futures.remove(tid);
+                        future.complete(false);
+                        return future;
+                    }
                 } else if (store.getVersion(object.oid) < object.vnum) {
                     Util.addToSetMap(unresolveddepsMap, object, tid);
                     Util.addToSetMap(depsMap, object, tid);

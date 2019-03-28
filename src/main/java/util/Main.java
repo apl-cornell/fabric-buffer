@@ -43,7 +43,7 @@ public class Main {
      * successful, worker commit the transaction immediately. Only one 
      * transaction is being prepared.
      */
-    private static final boolean WORKER_CONCUR = false;
+    private static final boolean WORKER_CONCUR = true;
     
     /*
      * Duration of the test.
@@ -53,7 +53,7 @@ public class Main {
     /*
      * Initial capacity of the store of each worker for each store
      */
-    private static final int INITIAL_CAPACITY = 5;
+    private static final int INITIAL_CAPACITY = 10;
     
     /*
      * End flag of the whole testing

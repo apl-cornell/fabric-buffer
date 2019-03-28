@@ -5,6 +5,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
+import static java.util.concurrent.Executors.newFixedThreadPool;
+
 public class Worker {
     /*
      * A map from an object to the last version of the object that the store has seen.
@@ -53,6 +55,8 @@ public class Worker {
 
     private int num_aborts;
 
+    private ExecutorService pool;
+
 
     public Worker(int wid, List<Store> storelist, boolean concur) {
         lastversion = new ConcurrentHashMap<>();
@@ -64,6 +68,9 @@ public class Worker {
         WORKER_CONCUR = concur;
         num_commits = 0;
         num_aborts = 0;
+        if (concur) {
+            pool = newFixedThreadPool(20);
+        }
     }
 
     /*
@@ -126,6 +133,7 @@ public class Worker {
     public void startnewtxn() {
         if (WORKER_CONCUR) {
             Thread t = new Thread(new TxnPrepareThread());
+            pool.submit(t);
             t.start();
         } else {
             try {
@@ -170,7 +178,8 @@ public class Worker {
 
         if (WORKER_CONCUR) {
             Thread t = new Thread(task);
-            t.start();
+            pool.submit(t);
+//            t.start();
         } else {
             task.run();
         }
