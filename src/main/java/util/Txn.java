@@ -14,7 +14,7 @@ public class Txn {
     /*
      * Transaction id.
      */
-    private long tid;
+    public long tid;
     
     /*
      * A map from store to objects needed to be read in that store.
@@ -122,11 +122,7 @@ public class Txn {
                 tid
         );
         for (Store s : Sets.union(reads.keySet(), writes.keySet())){
-            Callable<Void> c = () -> {
-                s.commit(worker, tid);
-                return null;
-            };
-            pool.submit(c);
+           new Thread(() -> s.commit(worker, tid)).start();
         }
     }
 }

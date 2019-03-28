@@ -1,99 +1,197 @@
-//package smartbuffer;
-//
-//import com.google.common.collect.HashMultimap;
-//import com.google.common.collect.SetMultimap;
-//import util.ObjectVN;
-//import util.Store;
-//
-//import java.util.HashMap;
-//import java.util.LinkedList;
-//import java.util.List;
-//import java.util.Set;
-//import java.util.concurrent.Future;
-//
-//public class OptimizedNumLinkBuffer implements SmartBuffer {
-//    /*
-//     * A map from the object to transaction IDs that depend on the object
-//     */
-//    private SetMultimap<ObjectVN, Long> depsMap;
-//
-//    /*
-//     * A map from a transaction ID to the number of unresolved dependencies
-//     */
-//    private HashMap<Long, Integer> numLink;
-//
-//    /*
-//     * A map from the object ID to the version number of the object in the buffer.
-//     */
-//    private HashMap<Long, Long> inbufferversion;
-//
-//    /*
-//     *
-//     */
-//    private SetMultimap<Long, ObjectVN> unresolveddeps;
-//
-//    /*
-//     * A pointer to the store that the buffer is associated with.
-//     */
-//    public Store store;
-//
-//    public OptimizedNumLinkBuffer() {
-//        depsMap = new HashMultimap<>();
-//        numLink = new HashMap<>();
-//        inbufferversion = new HashMap<>();
-//    }
-//
-//    @Override
-//    public Future<Boolean> add(long tid, Set<ObjectVN> deps) {
-//        for (ObjectVN object : actualdeps) {
-//            inbufferversion.put(object.oid, object.vnum);
-//            depsMap.put(object, tid);
-//            unresolveddeps.put(tid, object);
-//        }
-//        for (ObjectVN object : resolveddeps) {
-//            inbufferversion.put(object.oid, object.vnum);
-//            depsMap.put(object, tid);
-//        }
-//        numLink.put(tid, actualdeps.size());
-//    }
-//
-//    @Override
-//    public void remove(ObjectVN object) {
-//        List<Long> translist = new LinkedList<Long>();
-//        boolean allremoved = true;
-//        for (long tid : depsMap.get(object)) {
-//            if (numLink.containsKey(tid) && unresolveddeps.get(tid).contains(object)) {
-//                numLink.put(tid, numLink.get(tid) - 1);
-//                if (numLink.get(tid) == 0) {
-//                    translist.add(tid);
-//                } else {
-//                    allremoved = false;
-//                }
-//            }
-//        }
-//        if (allremoved) {
-//            depsMap.removeAll(object);
-//        }
-//    }
-//
-//    @Override
-//    public void eject(ObjectVN object) {
-//        List<Long> translist = new LinkedList<Long>();
-//        if (inbufferversion.containsKey(object.oid) && object.vnum > inbufferversion.get(object.oid)) {
-//            ObjectVN last = new ObjectVN(object.oid, inbufferversion.get(object.oid));
-//            for (long tid : depsMap.get(last)) {
-//                if (numLink.containsKey(tid)) {
-//                    translist.add(tid);
-//                    numLink.remove(tid);
-//                }
-//            }
-//            depsMap.removeAll(last);
-//        }
-//    }
-//
-//    @Override
-//    public void delete(long tid) {
-//        numLink.remove(tid);
-//    }
-//
-//}
+package smartbuffer;
+
+import util.ObjectVN;
+import util.Store;
+import util.Util;
+
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+public class OptimizedNumLinkBuffer implements SmartBuffer {
+    /*
+     * A map from the object to transaction IDs that depend on the object.
+     */
+    private ConcurrentHashMap<ObjectVN, HashSet<Long>> depsMap;
+
+    /*
+     * A map from the object to transaction IDS that depend on the object and that the dependency is not resolved.
+     */
+    private ConcurrentHashMap<ObjectVN, Long> unresolveddepsMap;
+
+    /*
+     * A map from a transaction ID to the number of unresolved dependencies.
+     * The keys are synchronized with {@code futures}.
+     */
+    private HashMap<Long, Integer> numLink;
+
+    /*
+     * A map from oid to the associated lock.
+     */
+    private ConcurrentHashMap<Long, Lock> objlocktable;
+
+    /*
+     * A map from tid to the associated lock
+     */
+    private ConcurrentHashMap<Long, Lock> txnlocktable;
+
+    /*
+     * A map from transactions in the buffer to associated futures to be filled.
+     * The keys are synchronized with {@code numLink}.
+     */
+    private HashMap<Long, CompletableFuture<Boolean>> futures;
+
+    /*
+     * A pointer to the store that the buffer is associated with.
+     */
+    public Store store;
+
+    /*
+     * A map from the object ID to the version number of the object in the buffer.
+     */
+    private ConcurrentHashMap<Long, Long> inbufferversion;
+
+    public OptimizedNumLinkBuffer() {
+        depsMap = new ConcurrentHashMap<>();
+        unresolveddepsMap = new ConcurrentHashMap<>();
+        numLink = new HashMap<>();
+        objlocktable = new ConcurrentHashMap<>();
+        txnlocktable = new ConcurrentHashMap<>();
+        inbufferversion = new ConcurrentHashMap<>();
+        futures = new HashMap<>();
+    }
+
+    private Lock getObjLock(Long oid) {
+        Lock lock = new ReentrantLock();
+        Lock existing = objlocktable.putIfAbsent(oid, lock);
+        return existing == null? lock : existing;
+    }
+
+    private Lock getTxnLock(Long tid) {
+        Lock lock = new ReentrantLock();
+        Lock existing = txnlocktable.putIfAbsent(tid, lock);
+        return existing == null? lock : existing;
+    }
+
+    @Override
+    public Future<Boolean> add(long tid, Set<ObjectVN> deps) {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        synchronized (getTxnLock(tid)) {
+            numLink.put(tid, 0);
+            futures.put(tid, future);
+        }
+        for (ObjectVN object : deps) {
+            synchronized (getObjLock(object.oid)) {
+                if (store.getVersion(object.oid) > object.vnum) {
+                    //Version Conflict
+                    synchronized (getTxnLock(tid)){
+                        numLink.remove(tid);
+                        futures.remove(tid);
+                        future.complete(false);
+                        return future;
+                    }
+                } else if (store.getVersion(object.oid) < object.vnum) {
+                    unresolveddepsMap.put(object, tid);
+                    Util.addToSetMap(depsMap, object, tid);
+                    synchronized (getTxnLock(tid)) {
+                        //if the transaction is not aborted
+                        if (numLink.containsKey(tid)) {
+                            numLink.put(tid, numLink.get(tid) + 1);
+                        } else {
+                            break; // transaction has been aborted
+                        }
+                    }
+                } else {
+                    Util.addToSetMap(depsMap, object, tid);
+                }
+                inbufferversion.put(object.oid, object.vnum);
+            }
+        }
+        synchronized (getTxnLock(tid)) {
+            if (numLink.containsKey(tid)) {
+                if (numLink.get(tid) == 0) {
+                    numLink.remove(tid);
+                    futures.remove(tid);
+                    future.complete(store.grabLock(tid));
+                }
+            }
+        }
+        return future;
+    }
+
+    @Override
+    public void remove(ObjectVN object) {
+        eject(object);
+        synchronized (getObjLock(object.oid)) {
+            //If the current version of object is not ejected from the buffer
+            if (unresolveddepsMap.containsKey(object)) {
+                long tid = unresolveddepsMap.get(object);
+                //If [tid] is not ejected from the buffer
+                synchronized (getTxnLock(tid)) {
+                    if (numLink.containsKey(tid)) {
+                        numLink.put(tid, numLink.get(tid) - 1);
+                        if (numLink.get(tid) == 0) {
+                            numLink.remove(tid);
+                            CompletableFuture<Boolean> future = futures.get(tid);
+                            try {
+                                numLink.remove(tid);
+                                future.complete(store.grabLock(tid));
+                                futures.remove(tid);
+                            } catch (NullPointerException e){
+                                System.out.println(future);
+                                throw e;
+                            }
+
+                        }
+                    }
+                }
+            }
+            unresolveddepsMap.remove(object);
+        }
+    }
+
+    @Override
+    public void eject(ObjectVN object) {
+        synchronized (getObjLock(object.oid)) {
+            if (inbufferversion.get(object.oid) != null) {
+                ObjectVN object_curr = new ObjectVN(object.oid, inbufferversion.get(object.oid));
+                if (object_curr.older(object) && depsMap.contains(object_curr)) {
+                    for (long tid : depsMap.get(object_curr)) {
+                        synchronized (getTxnLock(tid)) {
+                            if (numLink.containsKey(tid)) {
+                                numLink.remove(tid);
+                                futures.get(tid).complete(false);
+                                futures.remove(tid);
+                            }
+                        }
+                    }
+                    depsMap.remove(object_curr);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void delete(long tid) {
+        synchronized (getTxnLock(tid)) {
+            numLink.remove(tid);
+            if (futures.containsKey(tid)){
+                futures.remove(tid).complete(false);
+            }
+        }
+    }
+
+    @Override
+    public void setStore(Store store) {
+        this.store = store;
+    }
+
+    @Override
+    public int numLink() {
+        return numLink.size();
+    }
+
+}

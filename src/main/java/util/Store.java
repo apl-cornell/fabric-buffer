@@ -74,11 +74,13 @@ public abstract class Store {
      */
     public abstract int pending();
 
+    public abstract Set<Long> pendingkey();
+
     public abstract int numLink();
 
     @Override
     public String toString() {
-        return String.format("Store with %d pending transactions and %d transactions in buffer", pending(), numLink());
+        return String.format("Store with %d pending transactions %s and %d transactions in buffer", pending(), pendingkey(), numLink());
     }
 
     /*--------------------------For testing only----------------------------*/

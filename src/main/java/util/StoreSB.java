@@ -83,8 +83,8 @@ public class StoreSB extends Store {
             return futureWith(false);
         }
 
-        Util.addToSetMap(pending, tid, writes);
-        Util.addToSetMap(pendingread, tid, reads);
+        pending.put(tid, new HashSet<>(writes));
+        pendingread.put(tid, new HashSet<>(reads));
 
         if (actualdeps.isEmpty()) {
             // Grab the lock on the store's side
@@ -160,6 +160,11 @@ public class StoreSB extends Store {
     @Override
     public int pending() {
         return pending.size();
+    }
+
+    @Override
+    public Set<Long> pendingkey(){
+        return pending.keySet();
     }
 
     @Override

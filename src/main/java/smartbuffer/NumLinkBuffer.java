@@ -6,6 +6,7 @@ import util.Util;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -76,7 +77,7 @@ public class NumLinkBuffer implements SmartBuffer {
     }
 
     @Override
-    public Future<Boolean> add(long tid, Set<ObjectVN> deps) {
+    public synchronized Future<Boolean> add(long tid, Set<ObjectVN> deps) {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         synchronized (getTxnLock(tid)) {
             numLink.put(tid, 0);
@@ -123,15 +124,13 @@ public class NumLinkBuffer implements SmartBuffer {
             if (unresolveddepsMap.containsKey(object)) {
                 for (long tid : unresolveddepsMap.get(object)) {
                     //If [tid] is not ejected from the buffer
-                    if (numLink.containsKey(tid)) {
-                        synchronized (getTxnLock(tid)) {
-                            if (numLink.containsKey(tid)) {
-                                numLink.put(tid, numLink.get(tid) - 1);
-                                if (numLink.get(tid) == 0) {
-                                    numLink.remove(tid);
-                                    futures.get(tid).complete(store.grabLock(tid));
-                                    futures.remove(tid);
-                                }
+                    synchronized (getTxnLock(tid)) {
+                        if (numLink.containsKey(tid)) {
+                            numLink.put(tid, numLink.get(tid) - 1);
+                            if (numLink.get(tid) == 0) {
+                                numLink.remove(tid);
+                                futures.get(tid).complete(store.grabLock(tid));
+                                futures.remove(tid);
                             }
                         }
                     }
@@ -142,8 +141,9 @@ public class NumLinkBuffer implements SmartBuffer {
     }
 
     @Override
-    public void eject(ObjectVN object) {
+    public synchronized void eject(ObjectVN object) {
         synchronized (getObjLock(object.oid)) {
+            LinkedList<ObjectVN> to_remove = new LinkedList<>();
             for (ObjectVN object_curr : depsMap.keySet()) {
                 if (object_curr.older(object)) {
                     for (long tid : depsMap.get(object_curr)) {
@@ -155,9 +155,12 @@ public class NumLinkBuffer implements SmartBuffer {
                             }
                         }
                     }
-                    depsMap.remove(object_curr);
+                    to_remove.add(object_curr);
                     unresolveddepsMap.remove(object_curr);
                 }
+            }
+            for (ObjectVN object_curr : to_remove) {
+                depsMap.remove(object_curr);
             }
         }
     }
