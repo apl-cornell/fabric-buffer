@@ -60,7 +60,7 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
         numLink = new HashMap<>();
         objlocktable = new ConcurrentHashMap<>();
         txnlocktable = new ConcurrentHashMap<>();
-        inbufferversion = new ConcurrentHashMap<>();
+//        inbufferversion = new ConcurrentHashMap<>();
         futures = new HashMap<>();
     }
 
@@ -107,7 +107,7 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
                 } else {
                     Util.addToSetMap(depsMap, object, tid);
                 }
-                Util.addToSetMap(inbufferversion, object.oid, object.vnum);
+//                Util.addToSetMap(inbufferversion, object.oid, object.vnum);
             }
         }
         synchronized (getTxnLock(tid)) {
@@ -151,28 +151,41 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
     @Override
     public void eject(ObjectVN object) {
         synchronized (getObjLock(object.oid)) {
-            if (inbufferversion.containsKey(object.oid)) {
-                Long to_remove = (-1l);
-                for (Long vnum : inbufferversion.get(object.oid)){
-                    if (vnum < object.vnum){
-                        ObjectVN object_curr = new ObjectVN(object.oid, vnum);
-                        for (long tid : depsMap.get(object_curr)) {
-                            synchronized (getTxnLock(tid)) {
-                                if (numLink.containsKey(tid)) {
-                                    numLink.remove(tid);
-                                    futures.get(tid).complete(false);
-                                    futures.remove(tid);
-                                }
-                            }
+            ObjectVN to_remove = new ObjectVN(object.oid, object.vnum - 1);
+            if (depsMap.containsKey(to_remove)){
+                for (long tid : depsMap.get(to_remove)){
+                    synchronized (getTxnLock(tid)) {
+                        if (numLink.containsKey(tid)){
+                            numLink.remove(tid);
+                            futures.get(tid).complete(false);
+                            futures.remove(tid);
                         }
-                        depsMap.remove(object_curr);
-                        to_remove = vnum;
                     }
                 }
-                if (to_remove >= 0){
-                    inbufferversion.remove(to_remove);
-                }
+                depsMap.remove(to_remove);
             }
+//            if (inbufferversion.containsKey(object.oid)) {
+//                Long to_remove = (-1l);
+//                for (Long vnum : inbufferversion.get(object.oid)){
+//                    if (vnum < object.vnum){
+//                        ObjectVN object_curr = new ObjectVN(object.oid, vnum);
+//                        for (long tid : depsMap.get(object_curr)) {
+//                            synchronized (getTxnLock(tid)) {
+//                                if (numLink.containsKey(tid)) {
+//                                    numLink.remove(tid);
+//                                    futures.get(tid).complete(false);
+//                                    futures.remove(tid);
+//                                }
+//                            }
+//                        }
+//                        depsMap.remove(object_curr);
+//                        to_remove = vnum;
+//                    }
+//                }
+//                if (to_remove >= 0){
+//                    inbufferversion.remove(to_remove);
+//                }
+//            }
         }
     }
 
