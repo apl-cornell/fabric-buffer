@@ -135,16 +135,14 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
                         numLink.put(tid, numLink.get(tid) - 1);
                         if (numLink.get(tid) == 0) {
                             numLink.remove(tid);
-                            CompletableFuture<Boolean> future = futures.get(tid);
-                            numLink.remove(tid);
-                            future.complete(store.grabLock(tid));
+                            futures.get(tid).complete(store.grabLock(tid));
                             futures.remove(tid);
-                            depsMap.remove(tid);
                         }
                     }
                 }
             }
             unresolveddepsMap.remove(object);
+            depsMap.remove(object);
         }
     }
 
@@ -164,28 +162,6 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
                 }
                 depsMap.remove(to_remove);
             }
-//            if (inbufferversion.containsKey(object.oid)) {
-//                Long to_remove = (-1l);
-//                for (Long vnum : inbufferversion.get(object.oid)){
-//                    if (vnum < object.vnum){
-//                        ObjectVN object_curr = new ObjectVN(object.oid, vnum);
-//                        for (long tid : depsMap.get(object_curr)) {
-//                            synchronized (getTxnLock(tid)) {
-//                                if (numLink.containsKey(tid)) {
-//                                    numLink.remove(tid);
-//                                    futures.get(tid).complete(false);
-//                                    futures.remove(tid);
-//                                }
-//                            }
-//                        }
-//                        depsMap.remove(object_curr);
-//                        to_remove = vnum;
-//                    }
-//                }
-//                if (to_remove >= 0){
-//                    inbufferversion.remove(to_remove);
-//                }
-//            }
         }
     }
 
