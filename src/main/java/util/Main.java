@@ -106,9 +106,6 @@ public class Main {
             workerlist.add(worker);
             TxnGenerator txngen;
             txngen = new TxnGenerator(worker, RandomGenerator.constant(0.5f), INITIAL_CAPACITY);
-            if (WORKER_CONCUR) {
-                workercommitlist.add(new Thread(new WorkerCommitThread(worker)));
-            }
             workerpreparelist.add(new Thread(new WorkerPrepareThread(worker)));
             txngenlist.add(new Thread(new TxnGenThread(txngen)));
         }
@@ -122,9 +119,6 @@ public class Main {
         for (int i = 0; i < WORKER_NUM; i++) {
             txngenlist.get(i).start();
             workerpreparelist.get(i).start();
-            if (WORKER_CONCUR) {
-                workercommitlist.get(i).start();
-            }
         }
         
         try {
