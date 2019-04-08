@@ -78,15 +78,8 @@ public class ObjectLock {
         if (!isLocked()) {
             this.writelockholder = tid;
             return true;
-        } else {
-            if (readlockholder.size() == 1 && readlockholder.contains(tid)) {
-                this.writelockholder = tid;
-                this.readlockholder.remove(tid);
-                return true;
-            } else {
-                return false;
-            }
         }
+        return false;
     }
 
     /**

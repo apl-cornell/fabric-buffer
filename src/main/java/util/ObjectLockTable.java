@@ -80,23 +80,23 @@ public class ObjectLockTable {
     public boolean grabLock(Set<ObjectVN> reads, Set<ObjectVN> writes, Long tid) {
         Comparator<ObjectVN> compare = Comparator.comparingLong(o -> o.oid);
         // Sort objects to avoid deadlock
-        List<ObjectVN> readlist = new ArrayList<>(reads);
-        List<ObjectVN> writelist = new ArrayList<>(writes);
-        readlist.sort(compare);
-        writelist.sort(compare);
+        List<ObjectVN> list = new ArrayList<>(reads);
+        list.addAll(writes);
+        list.sort(compare);
         
-        for (ObjectVN read : readlist) {
-            if (!this.lockread(tid, read.oid)) {
-                releaseLock(reads, writes, tid);
-                return false;
-            };
-        }
-        
-        for (ObjectVN write : writelist) {
-            if (!this.lockwrite(tid, write.oid)) {
-                releaseLock(reads, writes, tid);
-                return false;
+        for (ObjectVN obj : list) {
+            if (writes.contains(obj)){
+                if (!this.lockwrite(tid, obj.oid)) {
+                    releaseLock(reads, writes, tid);
+                    return false;
+                }
+            } else {
+                if (!this.lockread(tid, obj.oid)) {
+                    releaseLock(reads, writes, tid);
+                    return false;
+                }
             }
+
         }
         
         return true;
