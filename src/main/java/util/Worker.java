@@ -5,6 +5,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
+import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 
 public class Worker {
@@ -55,7 +56,7 @@ public class Worker {
 
     private int num_aborts;
 
-    private ExecutorService pool;
+    public ExecutorService pool;
 
 
     public Worker(int wid, List<Store> storelist, boolean concur) {
@@ -69,7 +70,8 @@ public class Worker {
         num_commits = 0;
         num_aborts = 0;
         if (concur) {
-            pool = newFixedThreadPool(20);
+            pool = newFixedThreadPool(1024);
+            // pool = newCachedThreadPool();
         }
     }
 
@@ -131,11 +133,11 @@ public class Worker {
      * Take a transaction from the generator and prepare the transaction.
      */
     public void startnewtxn() {
-        if (WORKER_CONCUR) {
-            Thread t = new Thread(new TxnPrepareThread());
-            pool.submit(t);
-            t.start();
-        } else {
+//        if (WORKER_CONCUR) {
+//            Thread t = new Thread(new TxnPrepareThread());
+//            pool.submit(t);
+//            t.start();
+//        } else {
             try {
                 Txn newtxn = queue.take();
                 boolean res = newtxn.prepare();
@@ -151,7 +153,7 @@ public class Worker {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-        }
+//        }
     }
 
     /*

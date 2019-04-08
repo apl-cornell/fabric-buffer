@@ -53,7 +53,7 @@ public class Txn {
         if (TxnConcurrent) {
             List<Future<Future<Boolean>>> futures = new LinkedList<>();
             for (Store s :  Sets.union(reads.keySet(), writes.keySet())){
-                Callable<Future<Boolean>> c = () -> {return s.prepare(worker, tid, reads.get(s), writes.get(s));};
+                Callable<Future<Boolean>> c = () -> {return s.prepare(worker, tid, reads.getOrDefault(s, new HashSet<>()), writes.getOrDefault(s, new HashSet<>()));};
                 final Future<Future<Boolean>> future = pool.submit(c);
                 futures.add(future);
             }
@@ -82,7 +82,7 @@ public class Txn {
             }
         } else {
             for (Store s : Sets.union(reads.keySet(), writes.keySet())) {
-                Future<Boolean> result = s.prepare(worker, tid, reads.get(s), writes.get(s));
+                Future<Boolean> result = s.prepare(worker, tid, reads.getOrDefault(s, new HashSet<>()), writes.getOrDefault(s, new HashSet<>()));
                 // if the prepare failed, abort this transaction
                 try {
                     if (!result.get()) {

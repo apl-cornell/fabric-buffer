@@ -77,6 +77,7 @@ public class NumLinkBuffer implements SmartBuffer {
     }
 
     @Override
+    //TODO : Check whether holding 1 objlock and 1 txnlock causes deadlock.
     public synchronized Future<Boolean> add(long tid, Set<ObjectVN> deps) {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         synchronized (getTxnLock(tid)) {

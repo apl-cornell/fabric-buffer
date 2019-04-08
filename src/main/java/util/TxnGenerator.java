@@ -22,6 +22,8 @@ public class TxnGenerator {
 
     /* Generator for transaction sizes */
     private RandomGenerator gen;
+
+    public int txn_created;
     
     /* Generate a new unique tid */
     private long generateTid() {
@@ -69,6 +71,7 @@ public class TxnGenerator {
         this.tid = 0;
         this.oid = 0;
         worker.setqueue(queue);
+        this.txn_created = 1;
         try {
             queue.put(initialtxn(initialCap));
         } catch (InterruptedException e) {
@@ -113,6 +116,8 @@ public class TxnGenerator {
         Txn new_txn = new Txn(worker, ntid, reads, writes);
         try {
             queue.put(new_txn);
+            txn_created++;
+            System.out.println(txn_created);
         } catch (InterruptedException e) {
             // TODO: should we handle this somehow?
         }

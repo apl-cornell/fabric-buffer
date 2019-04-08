@@ -70,7 +70,7 @@ public class StoreSB extends Store {
 
         for (ObjectVN object : reads) {
             // if there is a older version, there is a version conflict and prepare fails.
-            if (object.vnum < lastversion.get(object.oid)) {
+            if (object.vnum < lastversion.getOrDefault(object.oid, 0l)) {
                 versionconflict.add(new ObjectVN(object.oid, lastversion.get(object.oid)));
                 // if there is a version that's never seen, add that to the dependency of this transaction
             } else if (object.vnum > lastversion.get(object.oid)) {
@@ -97,6 +97,9 @@ public class StoreSB extends Store {
 
     @Override
     public void commit(Worker worker, long tid) {
+        if (!pending.containsKey(tid)){
+            return;
+        }
         for (ObjectVN write : pending.get(tid)) {
             lastversion.put(write.oid, write.vnum);
 
@@ -113,7 +116,7 @@ public class StoreSB extends Store {
             buffer.remove(write);
         }
         // Release Lock
-        locktable.releaseLock(pendingread.get(tid), pending.get(tid), tid);
+        locktable.releaseLock(pendingread.getOrDefault(tid, new HashSet<>()), pending.getOrDefault(tid, new HashSet<>()), tid);
         pending.remove(tid);
         pendingread.remove(tid);
     }

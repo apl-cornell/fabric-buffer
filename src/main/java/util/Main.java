@@ -25,7 +25,7 @@ public class Main {
      * Intervals for worker to start a new txn. Only used when WORKER_CONCUR is
      * true.
      */
-    private static final int TRANS_PREPARE_INV = 1;
+    private static final int TRANS_PREPARE_INV = 0;
     
     /*
      * Intervals for worker to commit a txn. Only used when WORKER_CONCUR is 
@@ -43,17 +43,17 @@ public class Main {
      * successful, worker commit the transaction immediately. Only one 
      * transaction is being prepared.
      */
-    private static final boolean WORKER_CONCUR = false;
+    private static final boolean WORKER_CONCUR = true;
     
     /*
      * Duration of the test.
      */
-    private static final int DURATION = 5000;
+    private static final int DURATION = 60000;
     
     /*
      * Initial capacity of the store of each worker for each store
      */
-    private static final int INITIAL_CAPACITY = 10;
+    private static final int INITIAL_CAPACITY = 2;
     
     /*
      * End flag of the whole testing
@@ -79,6 +79,8 @@ public class Main {
      * List of Transaction Generators.
      */
     private ArrayList<Thread> txngenlist;
+
+    private int txn_ended = 0;
     
     
     public void newTest(String[] args) {
@@ -91,7 +93,7 @@ public class Main {
 
         //Initialize stores
         for (int i = 0; i < STORE_NUM; i++) {
-            SmartBuffer buffer = new OptimizedNumLinkBuffer();
+            SmartBuffer buffer = new NumLinkBuffer();
             Store store = new StoreSB(buffer);
             buffer.setStore(store);
             storelist.add(store);
@@ -142,6 +144,8 @@ public class Main {
             System.out.println(w);
         }
 
+
+
         System.exit(0);
     }
     
@@ -166,6 +170,8 @@ public class Main {
             } catch (InterruptedException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
+            } finally {
+                System.out.println(txngen.txn_created);
             }
         }
     }
@@ -185,7 +191,18 @@ public class Main {
             if (WORKER_CONCUR) {
                 try {
                     while (!exit) {
-                        worker.startnewtxn();
+                        Runnable task = () -> {
+                            try {
+                                worker.startnewtxn();
+                            } catch (Throwable e){
+                                System.err.println(e);
+                                e.printStackTrace();
+                                throw e;
+                            }
+                            txn_ended++;
+                            System.out.println("Ended " + txn_ended);
+                        };
+                        worker.pool.execute(task);
                         Thread.sleep(TRANS_PREPARE_INV);
                     } 
                 } catch (InterruptedException e) {
