@@ -1,9 +1,6 @@
 package util;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import util.ObjectLock;
 
@@ -78,20 +75,32 @@ public class ObjectLockTable {
      *         grabbed
      */
     public boolean grabLock(Set<ObjectVN> reads, Set<ObjectVN> writes, Long tid) {
-        Comparator<ObjectVN> compare = Comparator.comparingLong(o -> o.oid);
-        // Sort objects to avoid deadlock
-        List<ObjectVN> list = new ArrayList<>(reads);
-        list.addAll(writes);
-        list.sort(compare);
+        // Generate oid set
+        Set<Long> idset = new HashSet<>();
+        Set<Long> writeid = new HashSet<>();
+
+        for (ObjectVN obj : reads) {
+            idset.add(obj.oid);
+        }
+
+        for (ObjectVN obj : writes) {
+            idset.add(obj.oid);
+            writeid.add(obj.oid);
+
+        }
+
+        // Sort oids to avoid deadlock
+        List<Long> list = new ArrayList<>(idset);
+        Collections.sort(list);
         
-        for (ObjectVN obj : list) {
-            if (writes.contains(obj)){
-                if (!this.lockwrite(tid, obj.oid)) {
+        for (Long oid : list) {
+            if (writeid.contains(oid)){
+                if (!this.lockwrite(tid, oid)) {
                     releaseLock(reads, writes, tid);
                     return false;
                 }
             } else {
-                if (!this.lockread(tid, obj.oid)) {
+                if (!this.lockread(tid, oid)) {
                     releaseLock(reads, writes, tid);
                     return false;
                 }
