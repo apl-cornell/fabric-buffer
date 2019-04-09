@@ -53,7 +53,7 @@ public class Main {
     /*
      * Initial capacity of the store of each worker for each store
      */
-    private static final int INITIAL_CAPACITY = 2;
+    private static final int INITIAL_CAPACITY = 10;
     
     /*
      * End flag of the whole testing

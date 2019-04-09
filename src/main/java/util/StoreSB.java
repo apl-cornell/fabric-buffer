@@ -80,6 +80,7 @@ public class StoreSB extends Store {
 
         if (!versionconflict.isEmpty()) {
             worker.update(versionconflict);
+            worker.num_abort_storevc++;
             return futureWith(false);
         }
 
@@ -88,7 +89,11 @@ public class StoreSB extends Store {
 
         if (actualdeps.isEmpty()) {
             // Grab the lock on the store's side
-            return futureWith(locktable.grabLock(reads, writes, tid));
+            boolean res = locktable.grabLock(reads, writes, tid);
+            if (!res) {
+                worker.num_abort_storelock++;
+            }
+            return futureWith(res);
         } else {
             // Result resolved to true if the dependencies of [tid] are resolved. resolved to false only when there is version conflict
             return buffer.add(tid, reads);

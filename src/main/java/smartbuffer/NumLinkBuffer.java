@@ -51,6 +51,9 @@ public class NumLinkBuffer implements SmartBuffer {
      * A pointer to the store that the buffer is associated with.
      */
     public Store store;
+
+    private int num_abort_lock;
+    private int num_abort_vc;
     
     
     public NumLinkBuffer() {
@@ -62,6 +65,9 @@ public class NumLinkBuffer implements SmartBuffer {
         objlocktable = new ConcurrentHashMap<>();
         txnlocktable = new ConcurrentHashMap<>();
         futures = new HashMap<>();
+
+        num_abort_lock = 0;
+        num_abort_vc = 0;
     }
     
     private Lock getObjLock(Long oid) {
@@ -92,6 +98,7 @@ public class NumLinkBuffer implements SmartBuffer {
                         numLink.remove(tid);
                         futures.remove(tid);
                         future.complete(false);
+                        num_abort_vc++;
                         return future;
                     }
                 } else if (store.getVersion(object.oid) < object.vnum) {
@@ -114,7 +121,11 @@ public class NumLinkBuffer implements SmartBuffer {
             if (numLink.containsKey(tid)) {
                 if (numLink.get(tid) == 0) {
                     numLink.remove(tid);
-                    future.complete(store.grabLock(tid));
+                    boolean res = store.grabLock(tid);
+                    if (!res){
+                        num_abort_lock++;
+                    }
+                    future.complete(res);
                 } else {
                     futures.put(tid, future);
                 }
@@ -136,7 +147,11 @@ public class NumLinkBuffer implements SmartBuffer {
                             numLink.put(tid, numLink.get(tid) - 1);
                             if (numLink.get(tid) == 0) {
                                 numLink.remove(tid);
-                                futures.get(tid).complete(store.grabLock(tid));
+                                boolean res = store.grabLock(tid);
+                                if (!res){
+                                    num_abort_lock++;
+                                }
+                                futures.get(tid).complete(res);
                                 futures.remove(tid);
                             }
                         }
@@ -158,6 +173,7 @@ public class NumLinkBuffer implements SmartBuffer {
                             if (numLink.containsKey(tid)) {
                                 numLink.remove(tid);
                                 futures.get(tid).complete(false);
+                                num_abort_vc++;
                                 futures.remove(tid);
                             }
                         }
@@ -191,5 +207,10 @@ public class NumLinkBuffer implements SmartBuffer {
     @Override
     public int numLink(){
         return numLink.size();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Buffer aborted %d txns because locking and %d txns because vc", num_abort_lock, num_abort_vc);
     }
 }

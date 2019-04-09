@@ -45,8 +45,11 @@ public class Txn {
         // Acquire lock on the worker's side
         Set<ObjectVN> readso = new HashSet<>(Util.getSetMapValues(reads));
         Set<ObjectVN> writeso = new HashSet<>(Util.getSetMapValues(writes));
+
+
         if (!worker.grablock(readso, writeso, tid)) {
             worker.releaselock(readso, writeso, tid);
+            worker.num_abort_workerlock++;
             return false;
         }
         // Submit transaction to each store
@@ -95,7 +98,6 @@ public class Txn {
                 }
             }
         }
-        worker.addPrepared(this);
         return true;
     }
     

@@ -56,6 +56,21 @@ public class Worker {
 
     private int num_aborts;
 
+    /*
+     * The number of txns aborted because cannot grab lock on the workers's side.
+     */
+    public int num_abort_workerlock;
+
+    /*
+     * The number of txns aborted because cannot grab lock on the store's side.
+     */
+    public int num_abort_storelock;
+
+    /*
+     * The number of txns aborted because of version conflict.
+     */
+    public int num_abort_storevc;
+
     public ExecutorService pool;
 
 
@@ -69,6 +84,9 @@ public class Worker {
         WORKER_CONCUR = concur;
         num_commits = 0;
         num_aborts = 0;
+        num_abort_workerlock = 0;
+        num_abort_storelock = 0;
+        num_abort_storevc = 0;
         if (concur) {
             pool = newFixedThreadPool(1024);
             // pool = newCachedThreadPool();
@@ -91,19 +109,6 @@ public class Worker {
         }
     }
 
-    /*
-     * Add a transaction to the set of prepared transactions.
-     */
-    public void addPrepared(Txn t) {
-        synchronized (prepared) {
-            if (prepared.isEmpty()) {
-                prepared.add(t);
-                prepared.notify();
-            } else {
-                prepared.add(t);
-            }
-        }
-    }
 
     /*
      * grab locks.
