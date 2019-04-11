@@ -48,8 +48,7 @@ public class Txn {
 
 
         if (!worker.grablock(readso, writeso, tid)) {
-            worker.releaselock(readso, writeso, tid);
-            worker.num_abort_workerlock++;
+            worker.num_abort_lock++;
             return false;
         }
         // Submit transaction to each store
