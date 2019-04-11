@@ -14,7 +14,7 @@ public class Main {
     /*
      * Number of workers.
      */
-    private static final int WORKER_NUM = 1;
+    private static final int WORKER_NUM = 2;
     
     /*
      * Intervals for Transaction Generators to generate new transaction.
@@ -48,12 +48,12 @@ public class Main {
     /*
      * Duration of the test.
      */
-    private static final int DURATION = 60000;
+    private static final int DURATION = 10000;
     
     /*
      * Initial capacity of the store of each worker for each store
      */
-    private static final int INITIAL_CAPACITY = 1000;
+    private static final int INITIAL_CAPACITY = 10000;
     
     /*
      * End flag of the whole testing
@@ -165,7 +165,7 @@ public class Main {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             } finally {
-                System.out.println(txngen.txn_created);
+                // System.out.println(txngen.txn_created);
             }
         }
     }
@@ -194,7 +194,7 @@ public class Main {
                                 throw e;
                             }
                             txn_ended++;
-                            System.out.println("Ended " + txn_ended);
+                            // System.out.println("Ended " + txn_ended);
                         };
                         worker.pool.execute(task);
                         Thread.sleep(TRANS_PREPARE_INV);

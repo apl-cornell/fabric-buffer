@@ -88,7 +88,7 @@ public class TxnGenerator {
         // generate readsize and writesize
         Set<Long> objects = worker.lastversion.keySet();
         int interactions = (int) Math.floor(this.gen.random() * objects.size());
-        int writesize = (int) Math.floor(interactions * this.gen.random());
+        int writesize = 0;//(int) Math.floor(interactions * this.gen.random());
         int readsize = interactions - writesize;
 
         // make sure the total number of transactions is readsize + writesize

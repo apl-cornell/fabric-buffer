@@ -3,6 +3,9 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/fabric-buffer.iml" filepath="$PROJECT_DIR$/.idea/fabric-buffer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/fabric-buffer.fabric-buffer.iml" filepath="$PROJECT_DIR$/.idea/modules/fabric-buffer.fabric-buffer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/fabric-buffer.fabric-buffer.main.iml" filepath="$PROJECT_DIR$/.idea/modules/fabric-buffer.fabric-buffer.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/fabric-buffer.fabric-buffer.test.iml" filepath="$PROJECT_DIR$/.idea/modules/fabric-buffer.fabric-buffer.test.iml" />
     </modules>
   </component>
 </project>
