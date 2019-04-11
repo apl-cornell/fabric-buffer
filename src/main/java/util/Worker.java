@@ -82,7 +82,7 @@ public class Worker {
         }
     }
 
-    public Worker(int wid, List<Store> storelist, boolean concur, HashMap<Long, Long> lastversion) {
+    public Worker(int wid, List<Store> storelist, boolean concur, HashMap<Long, Long> lastversion, HashMap<Long, Store> location) {
         locktable = new ObjectLockTable();
         prepared = ConcurrentHashMap.newKeySet();
         location = new HashMap<>();
@@ -98,6 +98,7 @@ public class Worker {
         }
 
         this.lastversion = new ConcurrentHashMap<>(lastversion);
+        this.location = location;
     }
 
     /*

@@ -72,12 +72,12 @@ public class TxnGenerator {
         this.oid = 0;
         worker.setqueue(queue);
         this.txn_created = 1;
-        try {
-            queue.put(initialtxn(initialCap));
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+//        try {
+////            queue.put(initialtxn(initialCap));
+//        } catch (InterruptedException e) {
+//            // TODO Auto-generated catch block
+//            e.printStackTrace();
+//        }
     }
 
     /* Generate a new transaction */

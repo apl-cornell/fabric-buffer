@@ -98,6 +98,8 @@ public class Main {
         }
 
 
+
+
         //Initialize stores
         for (int i = 0; i < STORE_NUM; i++) {
             SmartBuffer buffer = new OptimizedNumLinkBuffer();
@@ -105,11 +107,17 @@ public class Main {
             buffer.setStore(store);
             storelist.add(store);
         }
+
+        //Initialize location
+        HashMap<Long, Store> location = new HashMap<>();
+        for (long oid = 0; oid < INITIAL_CAPACITY; oid++) {
+            location.put(oid, storelist.get(0));
+        }
         
         LinkedList<Worker> workerlist = new LinkedList<>();
         //Initialize workers
         for (int i = 0; i < WORKER_NUM; i++) {
-            Worker worker = new Worker(i, storelist, WORKER_CONCUR, lastversion);
+            Worker worker = new Worker(i, storelist, WORKER_CONCUR, lastversion, location);
             workerlist.add(worker);
             TxnGenerator txngen;
             txngen = new TxnGenerator(worker, RandomGenerator.constant(0.001f), INITIAL_CAPACITY);
