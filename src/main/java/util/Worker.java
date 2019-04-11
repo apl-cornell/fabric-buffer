@@ -82,6 +82,24 @@ public class Worker {
         }
     }
 
+    public Worker(int wid, List<Store> storelist, boolean concur, HashMap<Long, Long> lastversion) {
+        locktable = new ObjectLockTable();
+        prepared = ConcurrentHashMap.newKeySet();
+        location = new HashMap<>();
+        this.wid = wid;
+        this.storelist = storelist;
+        WORKER_CONCUR = concur;
+        num_commits = 0;
+        num_aborts = 0;
+        num_abort_lock = 0;
+        if (concur) {
+            pool = newFixedThreadPool(1024);
+            // pool = newCachedThreadPool();
+        }
+
+        this.lastversion = new ConcurrentHashMap<>(lastversion);
+    }
+
     /*
      * Set the queue.
      */

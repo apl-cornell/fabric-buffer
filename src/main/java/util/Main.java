@@ -1,6 +1,7 @@
 package util;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 
 import smartbuffer.*;
@@ -90,11 +91,17 @@ public class Main {
         workercommitlist = new ArrayList<>();
         txngenlist = new ArrayList<>();
 
+        //Initialize objects
+        HashMap<Long, Long> lastversion = new HashMap<>();
+        for (long oid = 0; oid < INITIAL_CAPACITY; oid++ ) {
+            lastversion.put(oid, 0l);
+        }
+
 
         //Initialize stores
         for (int i = 0; i < STORE_NUM; i++) {
             SmartBuffer buffer = new OptimizedNumLinkBuffer();
-            Store store = new StoreSB(buffer);
+            Store store = new StoreSB(buffer, lastversion);
             buffer.setStore(store);
             storelist.add(store);
         }
@@ -102,7 +109,7 @@ public class Main {
         LinkedList<Worker> workerlist = new LinkedList<>();
         //Initialize workers
         for (int i = 0; i < WORKER_NUM; i++) {
-            Worker worker = new Worker(i, storelist, WORKER_CONCUR);
+            Worker worker = new Worker(i, storelist, WORKER_CONCUR, lastversion);
             workerlist.add(worker);
             TxnGenerator txngen;
             txngen = new TxnGenerator(worker, RandomGenerator.constant(0.001f), INITIAL_CAPACITY);

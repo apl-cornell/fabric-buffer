@@ -55,6 +55,19 @@ public class StoreSB extends Store {
         this.num_abort_vc = 0;
     }
 
+    public StoreSB(SmartBuffer buffer, HashMap<Long, Long> lastversion){
+        this.buffer = buffer;
+        this.lastversion = new HashMap<>();
+        this.pending = new ConcurrentHashMap<>();
+        this.pendingread = new ConcurrentHashMap<>();
+        this.locktable = new ObjectLockTable();
+
+        this.num_abort_lock = 0;
+        this.num_abort_vc = 0;
+
+        this.lastversion = lastversion;
+    }
+
     @Override
     public void setWorkers(Collection<Worker> workers) {
         this.workers = workers;
