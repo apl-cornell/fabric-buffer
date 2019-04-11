@@ -59,17 +59,8 @@ public class Worker {
     /*
      * The number of txns aborted because cannot grab lock on the workers's side.
      */
-    public int num_abort_workerlock;
+    public int num_abort_lock;
 
-    /*
-     * The number of txns aborted because cannot grab lock on the store's side.
-     */
-    public int num_abort_storelock;
-
-    /*
-     * The number of txns aborted because of version conflict.
-     */
-    public int num_abort_storevc;
 
     public ExecutorService pool;
 
@@ -84,9 +75,7 @@ public class Worker {
         WORKER_CONCUR = concur;
         num_commits = 0;
         num_aborts = 0;
-        num_abort_workerlock = 0;
-        num_abort_storelock = 0;
-        num_abort_storevc = 0;
+        num_abort_lock = 0;
         if (concur) {
             pool = newFixedThreadPool(1024);
             // pool = newCachedThreadPool();
@@ -213,6 +202,7 @@ public class Worker {
 
     @Override
     public String toString(){
-        return String.format("This worker completed %d transactions, aborted %d transactions", num_commits, num_aborts);
+        return String.format("This worker completed %d transactions, aborted %d transactions, aborted %d txns because lock",
+                num_commits, num_aborts, num_abort_lock);
     }
 }

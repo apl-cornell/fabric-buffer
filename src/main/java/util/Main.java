@@ -53,7 +53,7 @@ public class Main {
     /*
      * Initial capacity of the store of each worker for each store
      */
-    private static final int INITIAL_CAPACITY = 10;
+    private static final int INITIAL_CAPACITY = 1000;
     
     /*
      * End flag of the whole testing
@@ -93,7 +93,7 @@ public class Main {
 
         //Initialize stores
         for (int i = 0; i < STORE_NUM; i++) {
-            SmartBuffer buffer = new NumLinkBuffer();
+            SmartBuffer buffer = new OptimizedNumLinkBuffer();
             Store store = new StoreSB(buffer);
             buffer.setStore(store);
             storelist.add(store);
@@ -105,7 +105,7 @@ public class Main {
             Worker worker = new Worker(i, storelist, WORKER_CONCUR);
             workerlist.add(worker);
             TxnGenerator txngen;
-            txngen = new TxnGenerator(worker, RandomGenerator.constant(0.5f), INITIAL_CAPACITY);
+            txngen = new TxnGenerator(worker, RandomGenerator.constant(0.001f), INITIAL_CAPACITY);
             workerpreparelist.add(new Thread(new WorkerPrepareThread(worker)));
             txngenlist.add(new Thread(new TxnGenThread(txngen)));
         }

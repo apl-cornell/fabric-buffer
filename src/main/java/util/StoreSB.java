@@ -35,6 +35,9 @@ public class StoreSB extends Store {
      */
     private Collection<Worker> workers;
 
+    private int num_abort_lock;
+    private int num_abort_vc;
+
     /**
      * Create a new instance of this class.
      *
@@ -47,6 +50,9 @@ public class StoreSB extends Store {
         this.pending = new ConcurrentHashMap<>();
         this.pendingread = new ConcurrentHashMap<>();
         this.locktable = new ObjectLockTable();
+
+        this.num_abort_lock = 0;
+        this.num_abort_vc = 0;
     }
 
     @Override
@@ -80,7 +86,7 @@ public class StoreSB extends Store {
 
         if (!versionconflict.isEmpty()) {
             worker.update(versionconflict);
-            worker.num_abort_storevc++;
+            num_abort_vc++;
             return futureWith(false);
         }
 
@@ -91,7 +97,7 @@ public class StoreSB extends Store {
             // Grab the lock on the store's side
             boolean res = locktable.grabLock(reads, writes, tid);
             if (!res) {
-                worker.num_abort_storelock++;
+                num_abort_lock++;
             }
             return futureWith(res);
         } else {
@@ -178,5 +184,11 @@ public class StoreSB extends Store {
     @Override
     public int numLink(){
         return buffer.numLink();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Store with %d pending transactions %s and %d transactions in buffer. Store aborted " +
+                "%d txns because lock and %d txns because vc. " + buffer.toString(), pending(), pendingkey(), numLink(), num_abort_lock, num_abort_vc);
     }
 }
