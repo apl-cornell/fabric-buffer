@@ -61,6 +61,8 @@ public class Worker {
      */
     public int num_abort_lock;
 
+    public Store homestore;
+
 
     public ExecutorService pool;
 
@@ -82,7 +84,7 @@ public class Worker {
         }
     }
 
-    public Worker(int wid, List<Store> storelist, boolean concur, HashMap<Long, Long> lastversion, HashMap<Long, Store> location) {
+    public Worker(int wid, List<Store> storelist, boolean concur, HashMap<Long, Long> lastversion, HashMap<Long, Store> location, int poolsize, Store homestore) {
         locktable = new ObjectLockTable();
         prepared = ConcurrentHashMap.newKeySet();
         this.wid = wid;
@@ -92,9 +94,11 @@ public class Worker {
         num_aborts = 0;
         num_abort_lock = 0;
         if (concur) {
-            pool = newFixedThreadPool(8);
+            pool = newFixedThreadPool(poolsize);
             // pool = newCachedThreadPool();
         }
+
+        this.homestore = homestore;
 
         this.lastversion = new ConcurrentHashMap<>(lastversion);
         this.location = location;
