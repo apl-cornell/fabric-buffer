@@ -25,7 +25,10 @@ public class TxnGenerator {
     private RandomGenerator gen;
 
     public int txn_created;
-    
+
+    /* Ratio of reads to writes */
+    private float writeRatio;
+
     /* Generate a new unique tid */
     private long generateTid() {
         tid++;
@@ -61,16 +64,17 @@ public class TxnGenerator {
     }
 
     public TxnGenerator(Worker worker) {
-        this(worker, RandomGenerator.constant(0.001f), 5);
+        this(worker, RandomGenerator.constant(0.001f), 0.001f);
     }
 
-    public TxnGenerator(Worker worker, RandomGenerator gen, int initialCap) {
+    public TxnGenerator(Worker worker, RandomGenerator gen, float writeRatio) {
         this.worker = worker;
         this.wid = worker.wid;
         this.queue = new ArrayBlockingQueue<>(TXN_QUEUE_CAPACITY);
         this.gen = gen;
         this.tid = 0;
         this.oid = 0;
+        this.writeRatio = writeRatio;
         worker.setqueue(queue);
         this.txn_created = 1;
 //        try {
@@ -86,7 +90,7 @@ public class TxnGenerator {
         // generate readsize and writesize
         Set<Long> objects = worker.lastversion.keySet();
         int interactions = (int) Math.floor(this.gen.random() * objects.size());
-        int writesize = (int) (interactions * 0.1);
+        int writesize = (int) (interactions * this.writeRatio);
         //(int) Math.floor(interactions * this.gen.random());
         int readsize = interactions - writesize;
 
