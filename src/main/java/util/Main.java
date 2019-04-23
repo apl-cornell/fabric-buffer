@@ -108,7 +108,7 @@ public class Main {
             Worker worker = new Worker(i, storelist, WORKER_CONCUR, lastversion, location);
             workerlist.add(worker);
             TxnGenerator txngen;
-            txngen = new TxnGenerator(worker, RandomGenerator.constant(0.001f), 0.001f);
+            txngen = new TxnGenerator(worker, RandomGenerator.constant(0.001f), 0.1f);
             workerpreparelist.add(new Thread(new WorkerPrepareThread(worker)));
             txngenlist.add(new Thread(new TxnGenThread(txngen)));
 
