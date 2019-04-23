@@ -51,6 +51,7 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
 
     private int num_abort_lock;
     private int num_abort_vc;
+    private int num_resolve;
 
 
 
@@ -121,6 +122,8 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
                     boolean res = store.grabLock(tid);
                     if (!res) {
                         num_abort_lock++;
+                    } else {
+                        num_resolve++;
                     }
                     future.complete(res);
                 }
@@ -145,6 +148,8 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
                             boolean res = store.grabLock(tid);
                             if (!res) {
                                 num_abort_lock++;
+                            } else {
+                                num_resolve++;
                             }
                             futures.get(tid).complete(res);
                             futures.remove(tid);
@@ -199,6 +204,6 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
 
     @Override
     public String toString() {
-        return String.format("Buffer aborted %d txns because locking and %d txns because vc", num_abort_lock, num_abort_vc);
+        return String.format("Buffer aborted %d txns because locking and %d txns because vc and resolved %d txns", num_abort_lock, num_abort_vc, num_resolve);
     }
 }

@@ -10,12 +10,12 @@ public class Main {
     /*
      * Number of stores.
      */
-    private static final int STORE_NUM = 1;
+    private static final int STORE_NUM = 2;
     
     /*
      * Number of workers.
      */
-    private static final int WORKER_NUM = 2;
+    private static final int WORKER_NUM = 1;
     
     /*
      * Intervals for Transaction Generators to generate new transaction.
@@ -55,64 +55,52 @@ public class Main {
      * Initial capacity of the store of each worker for each store
      */
     private static final int INITIAL_CAPACITY = 10000;
+
+    private static final boolean TxnGen_Test = false;
     
     /*
      * End flag of the whole testing
      */
     private boolean exit;
-    
-    /*
-     * List of stores.
-     */
-    private ArrayList<Store> storelist;
-    
-    /*
-     * List of worker prepare thread.
-     */
-    private ArrayList<Thread> workerpreparelist;
-    
-    /*
-     * List of worker commit thread.
-     */
-    private ArrayList<Thread> workercommitlist;
-    
-    /*
-     * List of Transaction Generators.
-     */
-    private ArrayList<Thread> txngenlist;
 
     private int txn_ended = 0;
     
     
     public void newTest(String[] args) {
         //Initialize fields
-        storelist = new ArrayList<>();
-        workerpreparelist = new ArrayList<>();
-        workercommitlist = new ArrayList<>();
-        txngenlist = new ArrayList<>();
+        // List of stores.
+        ArrayList<Store> storelist = new ArrayList<>();
+        // List of worker prepare thread.
+        ArrayList<Thread> workerpreparelist = new ArrayList<>();
+        // List of Transaction Generators.
+        ArrayList<Thread> txngenlist = new ArrayList<>();
+        // List of txngentest thread.
+        ArrayList<Thread> txngentestlist = new ArrayList<>();
 
-        //Initialize objects
+
         HashMap<Long, Long> lastversion = new HashMap<>();
-        for (long oid = 0; oid < INITIAL_CAPACITY; oid++ ) {
-            lastversion.put(oid, 0l);
-        }
-
-
-
-
         //Initialize stores
         for (int i = 0; i < STORE_NUM; i++) {
+            //Initialize objects
+            HashMap<Long, Long> lastversion_store = new HashMap<>();
+            for (long oid = i*INITIAL_CAPACITY; oid < (i + 1)*INITIAL_CAPACITY; oid++){
+                lastversion.put(oid, 0l);
+                lastversion_store.put(oid, 0l);
+            }
             SmartBuffer buffer = new OptimizedNumLinkBuffer();
-            Store store = new StoreSB(buffer, lastversion);
+            Store store = new StoreSB(buffer, lastversion_store);
             buffer.setStore(store);
             storelist.add(store);
         }
 
         //Initialize location
         HashMap<Long, Store> location = new HashMap<>();
-        for (long oid = 0; oid < INITIAL_CAPACITY; oid++) {
-            location.put(oid, storelist.get(0));
+        for (int i = 0; i < STORE_NUM; i++){
+            for (long oid = i*INITIAL_CAPACITY; oid < (i + 1)*INITIAL_CAPACITY; oid++){
+                location.put(oid, storelist.get(i));
+            }
         }
+
         
         LinkedList<Worker> workerlist = new LinkedList<>();
         //Initialize workers
@@ -123,6 +111,10 @@ public class Main {
             txngen = new TxnGenerator(worker, RandomGenerator.constant(0.001f), INITIAL_CAPACITY);
             workerpreparelist.add(new Thread(new WorkerPrepareThread(worker)));
             txngenlist.add(new Thread(new TxnGenThread(txngen)));
+
+            if (TxnGen_Test){
+                txngentestlist.add(new Thread(new TxnGenTestThread(txngen)));
+            }
         }
         
         //Update worker list for each store
@@ -133,6 +125,9 @@ public class Main {
         //Start txngen thread and worker thread
         for (int i = 0; i < WORKER_NUM; i++) {
             txngenlist.get(i).start();
+            if (TxnGen_Test){
+                txngentestlist.get(i).start();
+            }
             workerpreparelist.get(i).start();
         }
         
@@ -181,6 +176,24 @@ public class Main {
                 e.printStackTrace();
             } finally {
                 // System.out.println(txngen.txn_created);
+            }
+        }
+    }
+
+    class TxnGenTestThread implements Runnable {
+        private TxnGenerator txngen;
+
+        public TxnGenTestThread(TxnGenerator txngen) { this.txngen = txngen; }
+
+        @Override
+        public void run() {
+            try {
+                while (!exit) {
+                    txngen.newTestTxn();
+                    Thread.sleep(10);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }

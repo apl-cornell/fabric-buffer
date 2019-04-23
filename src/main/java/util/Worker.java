@@ -77,7 +77,7 @@ public class Worker {
         num_aborts = 0;
         num_abort_lock = 0;
         if (concur) {
-            pool = newFixedThreadPool(1024);
+            pool = newFixedThreadPool(8);
             // pool = newCachedThreadPool();
         }
     }
@@ -85,7 +85,6 @@ public class Worker {
     public Worker(int wid, List<Store> storelist, boolean concur, HashMap<Long, Long> lastversion, HashMap<Long, Store> location) {
         locktable = new ObjectLockTable();
         prepared = ConcurrentHashMap.newKeySet();
-        location = new HashMap<>();
         this.wid = wid;
         this.storelist = storelist;
         WORKER_CONCUR = concur;
@@ -93,7 +92,7 @@ public class Worker {
         num_aborts = 0;
         num_abort_lock = 0;
         if (concur) {
-            pool = newFixedThreadPool(1024);
+            pool = newFixedThreadPool(8);
             // pool = newCachedThreadPool();
         }
 
@@ -158,8 +157,6 @@ public class Worker {
                     newtxn.commit();
                     num_commits++;
                 } else {
-                    // TODO : Handle version conflict
-                    newtxn.abort();
                     num_aborts++;
                 }
             } catch (InterruptedException e) {

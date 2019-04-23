@@ -97,24 +97,7 @@ public class Txn {
                 }
             }
         }
-        return true;
-    }
-    
-    public void abort() {
-        //abort the transaction in every store
-        for (Store s : Sets.union(reads.keySet(), writes.keySet())){
-            s.abort(this.tid);
-        }
 
-        //Release lock on the worker's side
-        worker.releaselock(
-                new HashSet<>(Util.getSetMapValues(reads)),
-                new HashSet<>(Util.getSetMapValues(writes)),
-                tid
-        );
-    }
-    
-    public void commit() {
         worker.update(Util.getSetMapValues(writes));
         //Release lock on the worker's side
         worker.releaselock(
@@ -122,8 +105,33 @@ public class Txn {
                 new HashSet<>(Util.getSetMapValues(writes)),
                 tid
         );
+        return true;
+    }
+    
+    public void abort() {
+        //Release lock on the worker's side
+        worker.releaselock(
+                new HashSet<>(Util.getSetMapValues(reads)),
+                new HashSet<>(Util.getSetMapValues(writes)),
+                tid
+        );
+
+        //abort the transaction in every store
         for (Store s : Sets.union(reads.keySet(), writes.keySet())){
-           new Thread(() -> s.commit(worker, tid)).start();
+            s.abort(this.tid);
+        }
+    }
+    
+    public void commit() throws InterruptedException {
+        for (Store s : Sets.union(reads.keySet(), writes.keySet())){
+           new Thread(() -> {
+               try {
+                   Thread.sleep((int)(Math.random()*0));
+               } catch (InterruptedException e) {
+                   e.printStackTrace();
+               }
+               s.commit(worker,tid);
+           }).start();
         }
     }
 }

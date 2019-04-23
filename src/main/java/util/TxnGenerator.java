@@ -60,7 +60,7 @@ public class TxnGenerator {
     }
 
     public TxnGenerator(Worker worker) {
-        this(worker, RandomGenerator.constant(0.5f), 5);
+        this(worker, RandomGenerator.constant(0.001f), 5);
     }
 
     public TxnGenerator(Worker worker, RandomGenerator gen, int initialCap) {
@@ -82,14 +82,28 @@ public class TxnGenerator {
 
     /* Generate a new transaction */
     public void newTxn() {
-        HashMap<Store, HashSet<ObjectVN>> reads = new HashMap<>();
-        HashMap<Store, HashSet<ObjectVN>> writes = new HashMap<>();
-
         // generate readsize and writesize
         Set<Long> objects = worker.lastversion.keySet();
         int interactions = (int) Math.floor(this.gen.random() * objects.size());
-        int writesize = 0;//(int) Math.floor(interactions * this.gen.random());
+        int writesize = (int) (interactions * 0.1);
+        //(int) Math.floor(interactions * this.gen.random());
         int readsize = interactions - writesize;
+
+        txn(readsize, writesize);
+    }
+
+    public void newTestTxn() {
+        int writesize = 0;
+        int readsize = 2;
+
+        txn(readsize, writesize);
+    }
+
+    private void txn(int readsize, int writesize){
+        HashMap<Store, HashSet<ObjectVN>> reads = new HashMap<>();
+        HashMap<Store, HashSet<ObjectVN>> writes = new HashMap<>();
+
+        Set<Long> objects = worker.lastversion.keySet();
 
         // make sure the total number of transactions is readsize + writesize
         List<Long> rwSet = randomSubset(objects, readsize + writesize);
@@ -110,14 +124,13 @@ public class TxnGenerator {
                 writesSoFar++;
             }
         }
-        
+
         long ntid = generateTid();
-        
+
         Txn new_txn = new Txn(worker, ntid, reads, writes);
         try {
             queue.put(new_txn);
             txn_created++;
-            System.out.println(txn_created);
         } catch (InterruptedException e) {
             // TODO: should we handle this somehow?
         }
