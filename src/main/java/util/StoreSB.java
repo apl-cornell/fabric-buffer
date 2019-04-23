@@ -201,7 +201,8 @@ public class StoreSB extends Store {
 
     @Override
     public String toString() {
-        return String.format("Store with %d pending transactions %s and %d transactions in buffer. Store aborted " +
-                "%d txns because lock and %d txns because vc. " + buffer.toString(), pending(), pendingkey(), numLink(), num_abort_lock, num_abort_vc);
+        return String.format("Store has %d pending transactions %s and %d transactions in buffer. Store aborted " +
+                "%d txns because of a lock conflict and %d txns because of a version conflict. "
+                + buffer.toString(), pending(), pendingkey(), numLink(), num_abort_lock, num_abort_vc);
     }
 }

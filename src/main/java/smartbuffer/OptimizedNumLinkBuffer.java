@@ -204,6 +204,9 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
 
     @Override
     public String toString() {
-        return String.format("Buffer aborted %d txns because locking and %d txns because vc and resolved %d txns", num_abort_lock, num_abort_vc, num_resolve);
+        return String.format(
+                "Buffer resolved %d txns, aborted %d txns because of a lock conflict, %d txns because of a version conflict",
+                num_resolve, num_abort_lock, num_abort_vc
+        );
     }
 }

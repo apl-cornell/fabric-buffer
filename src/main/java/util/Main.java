@@ -64,6 +64,8 @@ public class Main {
      * End flag of the whole testing
      */
     private boolean exit;
+
+    private int txn_ended;
     
     
     public void newTest(String[] args) {
@@ -109,7 +111,8 @@ public class Main {
             Worker worker = new Worker(i, storelist, WORKER_CONCUR, lastversion, location, NUM_THREAD, storelist.get(storeindex));
             workerlist.add(worker);
             TxnGenerator txngen;
-            txngen = new TxnGenerator(worker, RandomGenerator.constant(0.001f), 0.001f, TXN_QUEUE_CAPACITY);
+            txngen = new TxnGenerator(worker, RandomGenerator.constant(0.001f), 0.1f, TXN_QUEUE_CAPACITY);
+
             workerpreparelist.add(new Thread(new WorkerPrepareThread(worker)));
             txngenlist.add(new Thread(new TxnGenThread(txngen)));
 

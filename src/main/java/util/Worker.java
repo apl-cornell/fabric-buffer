@@ -222,7 +222,7 @@ public class Worker {
 
     @Override
     public String toString(){
-        return String.format("This worker completed %d transactions, aborted %d transactions, aborted %d txns because lock",
+        return String.format("This worker completed %d transactions, aborted %d transactions in total, %d of which were due to a lock conflict",
                 num_commits, num_aborts, num_abort_lock);
     }
 }
