@@ -16,6 +16,11 @@ public class Main {
      * Number of workers.
      */
     private static final int WORKER_NUM = 1;
+
+    /*
+     * Number of worker threads
+     */
+    private static final int NUM_THREAD = 8;
     
     /*
      * Intervals for Transaction Generators to generate new transaction.
@@ -105,7 +110,8 @@ public class Main {
         LinkedList<Worker> workerlist = new LinkedList<>();
         //Initialize workers
         for (int i = 0; i < WORKER_NUM; i++) {
-            Worker worker = new Worker(i, storelist, WORKER_CONCUR, lastversion, location);
+            int storeindex = (int)(1.0 * i / WORKER_NUM * STORE_NUM);
+            Worker worker = new Worker(i, storelist, WORKER_CONCUR, lastversion, location, NUM_THREAD, storelist.get(storeindex));
             workerlist.add(worker);
             TxnGenerator txngen;
             txngen = new TxnGenerator(worker, RandomGenerator.constant(0.001f), INITIAL_CAPACITY);
