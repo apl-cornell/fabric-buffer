@@ -3,6 +3,7 @@ package util;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicLong;
 
 import smartbuffer.*;
 
@@ -70,6 +71,8 @@ public class Main {
     private boolean exit;
 
     private int txn_ended;
+
+    private AtomicLong last_unused_oid;
     
     
     public void newTest(String[] args) {
@@ -83,6 +86,8 @@ public class Main {
         // List of txngentest thread.
         ArrayList<Thread> txngentestlist = new ArrayList<>();
 
+        last_unused_oid = new AtomicLong();
+
 
         HashMap<Long, Long> lastversion = new HashMap<>();
         //Initialize stores
@@ -90,6 +95,7 @@ public class Main {
             //Initialize objects
             HashMap<Long, Long> lastversion_store = new HashMap<>();
             for (long oid = i*INITIAL_CAPACITY; oid < (i + 1)*INITIAL_CAPACITY; oid++){
+                last_unused_oid.incrementAndGet();
                 lastversion.put(oid, 0l);
                 lastversion_store.put(oid, 0l);
             }

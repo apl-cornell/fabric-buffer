@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class TxnGenerator {
     /* Worker this generator is associated with */
@@ -19,7 +20,7 @@ public class TxnGenerator {
     private long tid;
     
     /*The biggest unused oid*/
-    private long oid;
+    private AtomicLong last_unused_oid;
 
     /* Generator for transaction sizes */
     private RandomGenerator gen;
@@ -37,8 +38,8 @@ public class TxnGenerator {
     
     /* Generate a new unique oid */
     private long generateOid() {
-        oid++;
-        return (oid - 1)*32 + oid;
+        long oid = last_unused_oid.incrementAndGet();
+        return oid;
     }
 
     private Txn initialtxn(int initial_cap) {
@@ -62,25 +63,19 @@ public class TxnGenerator {
     }
 
     public TxnGenerator(Worker worker) {
-        this(worker, RandomGenerator.constant(0.001f), 0.001f, 10);
+        this(worker, RandomGenerator.constant(0.001f), 0.001f, 10, new AtomicLong());
     }
 
-    public TxnGenerator(Worker worker, RandomGenerator gen, float writeRatio, int txn_queue_capacity) {
+    public TxnGenerator(Worker worker, RandomGenerator gen, float writeRatio, int txn_queue_capacity, AtomicLong last_unused_oid) {
         this.worker = worker;
         this.wid = worker.wid;
         this.queue = new ArrayBlockingQueue<>(txn_queue_capacity);
         this.gen = gen;
         this.tid = 0;
-        this.oid = 0;
+        this.last_unused_oid = last_unused_oid;
         this.writeRatio = writeRatio;
         worker.setqueue(queue);
         this.txn_created = 1;
-//        try {
-////            queue.put(initialtxn(initialCap));
-//        } catch (InterruptedException e) {
-//            // TODO Auto-generated catch block
-//            e.printStackTrace();
-//        }
     }
 
     /* Generate a new transaction */
