@@ -118,15 +118,30 @@ public class Txn {
 
         //abort the transaction in every store
         for (Store s : Sets.union(reads.keySet(), writes.keySet())){
-            s.abort(this.tid);
+            new Thread(() -> {
+                try {
+                    if (!s.equals(worker.homestore)) {
+                        Thread.sleep((int)(Math.random()*worker.non_home_inv));
+                    } else {
+                        Thread.sleep((int)(Math.random()*worker.home_inv));
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                s.abort(this.tid);
+            }).start();
         }
     }
     
-    public void commit() throws InterruptedException {
+    public void commit() {
         for (Store s : Sets.union(reads.keySet(), writes.keySet())){
            new Thread(() -> {
                try {
-                   Thread.sleep((int)(Math.random()*0));
+                   if (!s.equals(worker.homestore)) {
+                       Thread.sleep((int)(Math.random()*worker.non_home_inv));
+                   } else {
+                       Thread.sleep((int)(Math.random()*worker.home_inv));
+                   }
                } catch (InterruptedException e) {
                    e.printStackTrace();
                }

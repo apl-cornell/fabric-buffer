@@ -63,6 +63,10 @@ public class Worker {
 
     public Store homestore;
 
+    public int home_inv;
+
+    public int non_home_inv;
+
 
     public ExecutorService pool;
 
@@ -84,7 +88,7 @@ public class Worker {
         }
     }
 
-    public Worker(int wid, List<Store> storelist, boolean concur, HashMap<Long, Long> lastversion, HashMap<Long, Store> location, int poolsize, Store homestore) {
+    public Worker(int wid, List<Store> storelist, boolean concur, HashMap<Long, Long> lastversion, HashMap<Long, Store> location, int poolsize, Store homestore, int home_inv, int non_home_inv) {
         locktable = new ObjectLockTable();
         prepared = ConcurrentHashMap.newKeySet();
         this.wid = wid;
@@ -99,6 +103,8 @@ public class Worker {
         }
 
         this.homestore = homestore;
+        this.home_inv = home_inv;
+        this.non_home_inv = non_home_inv;
 
         this.lastversion = new ConcurrentHashMap<>(lastversion);
         this.location = location;

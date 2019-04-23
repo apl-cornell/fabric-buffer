@@ -22,6 +22,10 @@ public class Main {
      */
     private static final int NUM_THREAD = 8;
 
+    private static final int NON_HOME_INV = 0;
+
+    private static final int HOME_INV = 0;
+
     /*
      * Intervals for Transaction Generators to generate new transaction.
      */
@@ -108,7 +112,7 @@ public class Main {
         //Initialize workers
         for (int i = 0; i < WORKER_NUM; i++) {
             int storeindex = (int)(1.0 * i / WORKER_NUM * STORE_NUM);
-            Worker worker = new Worker(i, storelist, WORKER_CONCUR, lastversion, location, NUM_THREAD, storelist.get(storeindex));
+            Worker worker = new Worker(i, storelist, WORKER_CONCUR, lastversion, location, NUM_THREAD, storelist.get(storeindex), HOME_INV, NON_HOME_INV);
             workerlist.add(worker);
             TxnGenerator txngen;
             txngen = new TxnGenerator(worker, RandomGenerator.constant(0.001f), 0.1f, TXN_QUEUE_CAPACITY);
