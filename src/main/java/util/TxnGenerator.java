@@ -41,8 +41,6 @@ public class TxnGenerator {
         return (oid - 1)*32 + oid;
     }
 
-    private static final int TXN_QUEUE_CAPACITY = 10;
-    
     private Txn initialtxn(int initial_cap) {
         HashMap<Store, HashSet<ObjectVN>> reads = new HashMap<>();
         HashMap<Store, HashSet<ObjectVN>> writes = new HashMap<>();
@@ -64,13 +62,13 @@ public class TxnGenerator {
     }
 
     public TxnGenerator(Worker worker) {
-        this(worker, RandomGenerator.constant(0.001f), 0.001f);
+        this(worker, RandomGenerator.constant(0.001f), 0.001f, 10);
     }
 
-    public TxnGenerator(Worker worker, RandomGenerator gen, float writeRatio) {
+    public TxnGenerator(Worker worker, RandomGenerator gen, float writeRatio, int txn_queue_capacity) {
         this.worker = worker;
         this.wid = worker.wid;
-        this.queue = new ArrayBlockingQueue<>(TXN_QUEUE_CAPACITY);
+        this.queue = new ArrayBlockingQueue<>(txn_queue_capacity);
         this.gen = gen;
         this.tid = 0;
         this.oid = 0;

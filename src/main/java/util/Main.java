@@ -21,23 +21,20 @@ public class Main {
      * Number of worker threads
      */
     private static final int NUM_THREAD = 8;
-    
+
     /*
      * Intervals for Transaction Generators to generate new transaction.
      */
     private static final int NEW_TRANS_INV = 0;
-    
+
+    private static final int TXN_QUEUE_CAPACITY = 10;
+
     /*
      * Intervals for worker to start a new txn. Only used when WORKER_CONCUR is
      * true.
      */
     private static final int TRANS_PREPARE_INV = 0;
-    
-    /*
-     * Intervals for worker to commit a txn. Only used when WORKER_CONCUR is 
-     * true.
-     */
-    private static final int TRANS_COMMIT_INV = 1;
+
     
     /*
      * Whether worker prepare and commit transactions concurrently.
@@ -67,8 +64,6 @@ public class Main {
      * End flag of the whole testing
      */
     private boolean exit;
-
-    private int txn_ended = 0;
     
     
     public void newTest(String[] args) {
@@ -114,7 +109,7 @@ public class Main {
             Worker worker = new Worker(i, storelist, WORKER_CONCUR, lastversion, location, NUM_THREAD, storelist.get(storeindex));
             workerlist.add(worker);
             TxnGenerator txngen;
-            txngen = new TxnGenerator(worker, RandomGenerator.constant(0.001f), 0.001f);
+            txngen = new TxnGenerator(worker, RandomGenerator.constant(0.001f), 0.001f, TXN_QUEUE_CAPACITY);
             workerpreparelist.add(new Thread(new WorkerPrepareThread(worker)));
             txngenlist.add(new Thread(new TxnGenThread(txngen)));
 
@@ -241,31 +236,6 @@ public class Main {
                 while (!exit) {
                     worker.startnewtxn();
                 }
-            }
-        }
-    }
-    
-    /*
-     * Thread for transaction commit.
-     */
-    class WorkerCommitThread implements Runnable {
-        private Worker worker;
-        
-        public WorkerCommitThread(Worker worker) {
-            this.worker = worker;
-        }
-        
-        @Override
-        public void run() {
-            try {
-                while (!exit) {
-                    worker.committxn();
-                    Thread.sleep(TRANS_COMMIT_INV);
-                }
-                
-            } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
             }
         }
     }
