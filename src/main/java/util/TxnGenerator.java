@@ -3,6 +3,7 @@ package util;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class TxnGenerator {
     /* Worker this generator is associated with */
@@ -146,9 +147,25 @@ public class TxnGenerator {
      * @param <T> The type of the set's elements.
      * @return A random subset of size {@code size}, in random order.
      */
-    private <T> List<T> randomSubset(Set<T> set, int size) {
-        List<T> list = new LinkedList<>(set);
-        Collections.shuffle(list);
-        return list.subList(0, size);
+    private static <T> List<T> randomSubset(Set<T> set, int size) {
+        List<T> list = new LinkedList<>(set); // TODO: this is still inefficient!
+        return randomSubset(list, size);
+    }
+
+    // https://stackoverflow.com/a/35278327/1175276
+    private static <E> List<E> randomSubset(List<E> list, int n, Random r) {
+        int length = list.size();
+
+        if (length < n) return null;
+
+        // We don't need to shuffle the whole list
+        for (int i = length - 1; i >= length - n; --i) {
+            Collections.swap(list, i , r.nextInt(i + 1));
+        }
+        return list.subList(length - n, length);
+    }
+
+    private static <E> List<E> randomSubset(List<E> list, int n) {
+        return randomSubset(list, n, ThreadLocalRandom.current());
     }
 }
