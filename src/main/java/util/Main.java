@@ -17,7 +17,7 @@ public class Main {
     /**
      * Number of workers.
      */
-    private static final int WORKER_NUM = 1;
+    private static final int WORKER_NUM = 6;
 
     /**
      * Duration of the test.
@@ -33,17 +33,17 @@ public class Main {
     /**
      * Number of worker threads
      */
-    private static final int NUM_THREAD = 8;
+    private static final int NUM_THREAD = 1;
 
     /**
      * Time interval for communicating with stores other than the home store.
      */
-    private static final int NON_HOME_INV = 0;
+    private static final int NON_HOME_INV = 20;
 
     /**
      * Time interval for communicating with the home store.
      */
-    private static final int HOME_INV = 0;
+    private static final int HOME_INV = 20;
 
     /**
      * Intervals for worker to start a new txn. Only used when WORKER_CONCUR is
@@ -62,6 +62,11 @@ public class Main {
      * transaction is being prepared.
      */
     private static final boolean WORKER_CONCUR = true;
+
+    /**
+     * If true, run the testing with original 2PC protocol.
+     */
+    private static final boolean ORIGINAL = false;
 
     /*-----------------------------------Txn Generator Configuration-----------------------------------*/
     /**
@@ -134,7 +139,7 @@ public class Main {
         //Initialize workers
         for (int i = 0; i < WORKER_NUM; i++) {
             int storeindex = (int)(1.0 * i / WORKER_NUM * STORE_NUM);
-            Worker worker = new Worker(i, storelist, WORKER_CONCUR, lastversion, location, NUM_THREAD, storelist.get(storeindex), HOME_INV, NON_HOME_INV);
+            Worker worker = new Worker(i, storelist, WORKER_CONCUR, ORIGINAL, lastversion, location, NUM_THREAD, storelist.get(storeindex), HOME_INV, NON_HOME_INV);
             workerlist.add(worker);
             TxnGenerator txngen;
             txngen = new TxnGenerator(worker, RandomGenerator.constant(0.001f), 0.1f, TXN_QUEUE_CAPACITY, last_unused_oid);

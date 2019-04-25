@@ -49,6 +49,8 @@ public class Worker {
      */
     private static boolean WORKER_CONCUR;
 
+    private static boolean ORIGINAL;
+
     /*
      * The number of transactions committed by this worker.
      */
@@ -88,12 +90,13 @@ public class Worker {
         }
     }
 
-    public Worker(int wid, List<Store> storelist, boolean concur, HashMap<Long, Long> lastversion, HashMap<Long, Store> location, int poolsize, Store homestore, int home_inv, int non_home_inv) {
+    public Worker(int wid, List<Store> storelist, boolean concur, boolean original, HashMap<Long, Long> lastversion, HashMap<Long, Store> location, int poolsize, Store homestore, int home_inv, int non_home_inv) {
         locktable = new ObjectLockTable();
         prepared = ConcurrentHashMap.newKeySet();
         this.wid = wid;
         this.storelist = storelist;
         WORKER_CONCUR = concur;
+        ORIGINAL = original;
         num_commits = 0;
         num_aborts = 0;
         num_abort_lock = 0;
@@ -155,11 +158,21 @@ public class Worker {
      * Take a transaction from the generator and prepare the transaction.
      */
     public void startnewtxn() {
-//        if (WORKER_CONCUR) {
-//            Thread t = new Thread(new TxnPrepareThread());
-//            pool.submit(t);
-//            t.start();
-//        } else {
+        if (ORIGINAL) {
+            try {
+                Txn newtxn = queue.take();
+                boolean res = newtxn.original_prepare();
+                if (res) {
+                    newtxn.original_commit();
+                    num_commits++;
+                } else {
+                    num_aborts++;
+                }
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        } else {
             try {
                 Txn newtxn = queue.take();
                 boolean res = newtxn.prepare();
@@ -173,58 +186,9 @@ public class Worker {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-//        }
-    }
-
-    /*
-     * Take a transaction from prepared and prepare the transaction.
-     */
-    public void committxn() {
-        Runnable task = () -> {
-            try {
-                synchronized (prepared){
-                    while (prepared.isEmpty()) {
-                        prepared.wait();
-                    }
-                    for (Txn newtxn : prepared) {
-                        newtxn.commit();
-                        prepared.remove(newtxn);
-                        break;
-                    }
-                }
-            } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        };
-
-        if (WORKER_CONCUR) {
-            Thread t = new Thread(task);
-            pool.submit(t);
-//            t.start();
-        } else {
-            task.run();
         }
     }
 
-    class TxnPrepareThread implements Runnable {
-
-        @Override
-        public void run() {
-            try {
-                Txn newtxn = queue.take();
-                boolean res = newtxn.prepare();
-                if (!res) {
-                    // TODO : Handle version conflict
-                }
-            } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-
-        }
-
-    }
 
     @Override
     public String toString(){

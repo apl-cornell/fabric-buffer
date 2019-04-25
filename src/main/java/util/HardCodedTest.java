@@ -8,7 +8,6 @@ import java.util.concurrent.*;
 
 import smartbuffer.NumLinkBuffer;
 import smartbuffer.SmartBuffer;
-import util.Main.WorkerCommitThread;
 import util.Main.WorkerPrepareThread;
 
 
@@ -84,10 +83,6 @@ public class HardCodedTest {
             worker.setqueue(queue);
             workerlist.add(worker);
             queuelist.add(queue);
-            
-            if (WORKER_CONCUR) {
-                workercommitlist.add(new Thread(new WorkerCommitThread(worker)));
-            }
             workerpreparelist.add(new Thread(new WorkerPrepareThread(worker)));
         }
         
@@ -104,8 +99,8 @@ public class HardCodedTest {
             String[] writestr = write.split(",");
             
             for (String s : readstr) {
-                s = s.replaceAll("(", "");
-                s = s.replaceAll(")", "");
+                s = s.replaceAll("[(]", "");
+                s = s.replaceAll("[)]", "");
                 String[] arg = s.split(" ");
                 int sid = Integer.parseInt(arg[0]);
                 long oid = Long.parseLong(arg[1]);
@@ -114,8 +109,8 @@ public class HardCodedTest {
             }
             
             for (String s : writestr) {
-                s = s.replaceAll("(", "");
-                s = s.replaceAll(")", "");
+                s = s.replaceAll("[(]", "");
+                s = s.replaceAll("[)]", "");
                 String[] arg = s.split(" ");
                 int sid = Integer.parseInt(arg[0]);
                 long oid = Long.parseLong(arg[1]);
@@ -171,29 +166,5 @@ public class HardCodedTest {
             }
         }
     }
-    
-    /*
-     * Thread for transaction commit.
-     */
-    class WorkerCommitThread implements Runnable {
-        private Worker worker;
-        
-        public WorkerCommitThread(Worker worker) {
-            this.worker = worker;
-        }
-        
-        @Override
-        public void run() {
-            try {
-                while (!exit) {
-                    worker.committxn();
-                    Thread.sleep(TRANS_COMMIT_INV);
-                }
-                
-            } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
-    }
+
 }

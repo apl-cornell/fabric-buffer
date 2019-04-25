@@ -101,9 +101,9 @@ public class TxnGenerator {
         HashMap<Store, HashSet<ObjectVN>> reads = new HashMap<>();
         HashMap<Store, HashSet<ObjectVN>> writes = new HashMap<>();
 
-        Set<Long> objects = worker.lastversion.keySet();
+//        Set<Long> objects = worker.lastversion.keySet();
 
-        Long[] rwSet = randomSet(readsize + writesize);
+        Set<Long> rwSet = randomSet(readsize + writesize);
 
         int writesSoFar = 0;
         for (long oid : rwSet) {
@@ -167,7 +167,20 @@ public class TxnGenerator {
 
 
     // Fast approximation of reservoir sampling
-    private Long[] randomSet(int size) {
+    private Set<Long> randomSet(int size) {
+        if (size*size > (int) (5 * last_unused_oid.get())) {
+            HashSet<Long> resset = new HashSet<>();
+            while (resset.size() < size){
+                Long i = (long)(Math.random()*last_unused_oid.get());
+                while (resset.contains(i)){
+                    i = (long)(Math.random()*last_unused_oid.get());
+                }
+                resset.add(i);
+            }
+
+            return resset;
+        }
+
         Long[] res = new Long[size];
 
         for (int i = 0; i < size; i++) {
@@ -196,6 +209,10 @@ public class TxnGenerator {
             }
         }
 
-        return res;
+        HashSet<Long> resset = new HashSet<>();
+        for (Long oid : res) {
+            resset.add(oid);
+        }
+        return resset;
     }
 }
