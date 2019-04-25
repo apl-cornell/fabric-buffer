@@ -96,7 +96,7 @@ public class Main {
     private AtomicLong last_unused_oid;
     
     
-    public void newTest(String[] args) {
+    public void newTest(int stores, int workers, int threads, int dbSize, RandomGenerator txnSize, float writeRatio) {
         //Initialize fields
         // List of stores.
         ArrayList<Store> storelist = new ArrayList<>();
@@ -112,10 +112,10 @@ public class Main {
 
         HashMap<Long, Long> lastversion = new HashMap<>();
         //Initialize stores
-        for (int i = 0; i < STORE_NUM; i++) {
+        for (int i = 0; i < stores; i++) {
             //Initialize objects
             HashMap<Long, Long> lastversion_store = new HashMap<>();
-            for (long oid = i*INITIAL_CAPACITY; oid < (i + 1)*INITIAL_CAPACITY; oid++){
+            for (long oid = i*dbSize; oid < (i + 1)*dbSize; oid++){
                 last_unused_oid.incrementAndGet();
                 lastversion.put(oid, 0l);
                 lastversion_store.put(oid, 0l);
@@ -128,8 +128,8 @@ public class Main {
 
         //Initialize location
         HashMap<Long, Store> location = new HashMap<>();
-        for (int i = 0; i < STORE_NUM; i++){
-            for (long oid = i*INITIAL_CAPACITY; oid < (i + 1)*INITIAL_CAPACITY; oid++){
+        for (int i = 0; i < stores; i++){
+            for (long oid = i*dbSize; oid < (i + 1)*dbSize; oid++){
                 location.put(oid, storelist.get(i));
             }
         }
@@ -137,12 +137,12 @@ public class Main {
         
         LinkedList<Worker> workerlist = new LinkedList<>();
         //Initialize workers
-        for (int i = 0; i < WORKER_NUM; i++) {
-            int storeindex = (int)(1.0 * i / WORKER_NUM * STORE_NUM);
-            Worker worker = new Worker(i, storelist, WORKER_CONCUR, ORIGINAL, lastversion, location, NUM_THREAD, storelist.get(storeindex), HOME_INV, NON_HOME_INV);
+        for (int i = 0; i < workers; i++) {
+            int storeindex = (int)(1.0 * i / workers * stores);
+            Worker worker = new Worker(i, storelist, WORKER_CONCUR, ORIGINAL, lastversion, location, threads, storelist.get(storeindex), HOME_INV, NON_HOME_INV);
             workerlist.add(worker);
             TxnGenerator txngen;
-            txngen = new TxnGenerator(worker, RandomGenerator.constant(0.001f), 0.1f, TXN_QUEUE_CAPACITY, last_unused_oid);
+            txngen = new TxnGenerator(worker, txnSize, writeRatio, TXN_QUEUE_CAPACITY, last_unused_oid);
 
             workerpreparelist.add(new Thread(new WorkerPrepareThread(worker)));
             txngenlist.add(new Thread(new TxnGenThread(txngen)));
@@ -153,12 +153,12 @@ public class Main {
         }
         
         //Update worker list for each store
-        for (int i = 0; i < STORE_NUM; i++) {
+        for (int i = 0; i < stores; i++) {
             storelist.get(i).setWorkers(workerlist);
         }
 
         //Start txngen thread and worker thread
-        for (int i = 0; i < WORKER_NUM; i++) {
+        for (int i = 0; i < workers; i++) {
             txngenlist.get(i).start();
             if (TxnGen_Test){
                 txngentestlist.get(i).start();
@@ -275,6 +275,6 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        (new Main()).newTest(args);
+        (new Main()).newTest(2, 2, 16, 10000, RandomGenerator.constant(0.001f), 0.1f);
     }
 }
