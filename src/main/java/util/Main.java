@@ -8,63 +8,72 @@ import java.util.concurrent.atomic.AtomicLong;
 import smartbuffer.*;
 
 public class Main {
-    /*
+    /*--------------------------------------General Configuration-------------------------------------*/
+    /**
      * Number of stores.
      */
     private static final int STORE_NUM = 2;
     
-    /*
+    /**
      * Number of workers.
      */
     private static final int WORKER_NUM = 1;
 
     /*
+     * Duration of the test.
+     */
+    private static final int DURATION = 10000;
+
+    /*
+     * Initial capacity of the store of each worker for each store
+     */
+    private static final int INITIAL_CAPACITY = 10000;
+
+    /*--------------------------------------Worker Configuration--------------------------------------*/
+    /**
      * Number of worker threads
      */
     private static final int NUM_THREAD = 8;
 
+    /**
+     * Time interval for communicating with stores other than the home store.
+     */
     private static final int NON_HOME_INV = 0;
 
+    /**
+     * Time interval for communicating with the home store.
+     */
     private static final int HOME_INV = 0;
 
-    /*
+    /**
+     * Intervals for worker to start a new txn. Only used when WORKER_CONCUR is
+     * true.
+     */
+    private static final int TRANS_PREPARE_INV = 0;
+
+    /**
+     * Whether worker prepare and commit transactions concurrently.
+     *
+     * If true, worker prepare a transaction in a separate thread and commit
+     * a transaction in a separate thread.
+     *
+     * If false, worker prepares for a transaction and if the prepare is
+     * successful, worker commit the transaction immediately. Only one
+     * transaction is being prepared.
+     */
+    private static final boolean WORKER_CONCUR = true;
+
+    /*-----------------------------------Txn Generator Configuration-----------------------------------*/
+    /**
      * Intervals for Transaction Generators to generate new transaction.
      */
     private static final int NEW_TRANS_INV = 0;
 
     private static final int TXN_QUEUE_CAPACITY = 10;
 
-    /*
-     * Intervals for worker to start a new txn. Only used when WORKER_CONCUR is
-     * true.
-     */
-    private static final int TRANS_PREPARE_INV = 0;
-
-    
-    /*
-     * Whether worker prepare and commit transactions concurrently.
-     * 
-     * If true, worker prepare a transaction in a separate thread and commit
-     * a transaction in a separate thread.
-     * 
-     * If false, worker prepares for a transaction and if the prepare is 
-     * successful, worker commit the transaction immediately. Only one 
-     * transaction is being prepared.
-     */
-    private static final boolean WORKER_CONCUR = true;
-    
-    /*
-     * Duration of the test.
-     */
-    private static final int DURATION = 10000;
-    
-    /*
-     * Initial capacity of the store of each worker for each store
-     */
-    private static final int INITIAL_CAPACITY = 10000;
-
     private static final boolean TxnGen_Test = false;
-    
+
+    /*----------------------------------Control fields------------------------------------------*/
     /*
      * End flag of the whole testing
      */
