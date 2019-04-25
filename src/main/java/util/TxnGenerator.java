@@ -38,8 +38,7 @@ public class TxnGenerator {
     
     /* Generate a new unique oid */
     private long generateOid() {
-        long oid = last_unused_oid.incrementAndGet();
-        return oid;
+        return last_unused_oid.incrementAndGet();
     }
 
     private Txn initialtxn(int initial_cap) {
@@ -58,8 +57,7 @@ public class TxnGenerator {
         }
         
         long ntid = generateTid();
-        Txn initial_txn = new Txn(worker, ntid, reads, writes);
-        return initial_txn;
+        return new Txn(worker, ntid, reads, writes);
     }
 
     public TxnGenerator(Worker worker) {
@@ -209,10 +207,7 @@ public class TxnGenerator {
             }
         }
 
-        HashSet<Long> resset = new HashSet<>();
-        for (Long oid : res) {
-            resset.add(oid);
-        }
+        HashSet<Long> resset = new HashSet<>(Arrays.asList(res));
         return resset;
     }
 }
