@@ -192,10 +192,6 @@ public class Main {
         for (Worker w : workerlist) {
             System.out.println(w);
         }
-
-
-
-        System.exit(0);
     }
     
     /*
@@ -286,5 +282,7 @@ public class Main {
 
     public static void main(String[] args) {
         (new Main()).newTest(2, 2, 16, 10000, RandomGenerator.constant(0.001f), 0.1f);
+
+        System.exit(0);
     }
 }
