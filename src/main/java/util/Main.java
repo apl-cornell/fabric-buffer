@@ -94,8 +94,18 @@ public class Main {
     private int txn_ended;
 
     private AtomicLong last_unused_oid;
-    
-    
+
+    /**
+     * Run a test, generating and running transactions for the set duration.
+     *
+     * @param stores The number of stores.
+     * @param workers The number of workers.
+     * @param threads The number of threads <b>per worker</b>.
+     * @param dbSize The number of objects <b>per store</b>.
+     * @param txnSize The number of objects in each transaction, as a proportion of the total number of objects in each
+     *                store.
+     * @param writeRatio The proportion of queried objects that are writes.
+     */
     public void newTest(int stores, int workers, int threads, int dbSize, RandomGenerator txnSize, float writeRatio) {
         //Initialize fields
         // List of stores.
