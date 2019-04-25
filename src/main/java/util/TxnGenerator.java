@@ -103,8 +103,7 @@ public class TxnGenerator {
 
         Set<Long> objects = worker.lastversion.keySet();
 
-        // make sure the total number of transactions is readsize + writesize
-        List<Long> rwSet = randomSubset(objects, readsize + writesize);
+        Long[] rwSet = randomSet(readsize + writesize);
 
         int writesSoFar = 0;
         for (long oid : rwSet) {
@@ -164,5 +163,39 @@ public class TxnGenerator {
 
     private static <E> List<E> randomSubset(List<E> list, int n) {
         return randomSubset(list, n, ThreadLocalRandom.current());
+    }
+
+
+    // Fast approximation of reservoir sampling
+    private Long[] randomSet(int size) {
+        Long[] res = new Long[size];
+
+        for (int i = 0; i < size; i++) {
+            res[i] = (long)i;
+        }
+
+        long t = 4 * size;
+        long i = size;
+        while (i < this.last_unused_oid.get() && i < t) {
+            int j = (int)(Math.random()*i);
+            if (j < size){
+                res[j] = i;
+            }
+            i = i + 1;
+        }
+
+        while (i < this.last_unused_oid.get()) {
+            double p = (1.0*size)/i;
+            double u = Math.random();
+            int g = (int)(Math.log(u)/Math.log(1 - p));
+            i = i + g;
+            if (i < this.last_unused_oid.get()) {
+                int j = (int)(Math.random()*size);
+                res[j] = i;
+                i = i + 1;
+            }
+        }
+
+        return res;
     }
 }
