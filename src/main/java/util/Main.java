@@ -19,13 +19,13 @@ public class Main {
      */
     private static final int WORKER_NUM = 1;
 
-    /*
+    /**
      * Duration of the test.
      */
     private static final int DURATION = 10000;
 
-    /*
-     * Initial capacity of the store of each worker for each store
+    /**
+     * Initial number of objects per store.
      */
     private static final int INITIAL_CAPACITY = 10000;
 
@@ -69,8 +69,15 @@ public class Main {
      */
     private static final int NEW_TRANS_INV = 0;
 
+    /**
+     * Size of the blocking queue between each worker and the associated txn generator.
+     */
     private static final int TXN_QUEUE_CAPACITY = 10;
 
+    /**
+     * If true, each worker is associated with an ordinary txn generator and another test txn generator which
+     * generates fixed size txns. The size can be modified (TxnGenerator.java)
+     */
     private static final boolean TxnGen_Test = false;
 
     /*----------------------------------Control fields------------------------------------------*/
