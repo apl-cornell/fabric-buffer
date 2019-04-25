@@ -2,7 +2,6 @@ package util;
 
 import com.google.common.collect.Sets;
 
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -49,7 +48,7 @@ public class Txn {
 
 
         if (!worker.grablock(readso, writeso, tid)) {
-            worker.num_abort_lock++;
+            worker.numAbortLock++;
             return false;
         }
         // Submit transaction to each store
@@ -143,7 +142,7 @@ public class Txn {
 
 
         if (!worker.grablock(readso, writeso, tid)) {
-            worker.num_abort_lock++;
+            worker.numAbortLock++;
             return false;
         }
         // Submit transaction to each store

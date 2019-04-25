@@ -1,8 +1,6 @@
 package util;
 
-import java.lang.reflect.Array;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 
@@ -84,4 +82,10 @@ public abstract class Store {
     public abstract void setversion(ObjectVN object);
     
     public abstract void addpending(long tid);
+
+    public abstract int getNumAborts();
+
+    public abstract int getNumAbortLock();
+
+    public abstract int getNumAbortVc();
 }

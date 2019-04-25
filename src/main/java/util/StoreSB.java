@@ -35,8 +35,8 @@ public class StoreSB extends Store {
      */
     private Collection<Worker> workers;
 
-    private int num_abort_lock;
-    private int num_abort_vc;
+    private int numAbortLock;
+    private int numAbortVc;
 
     /**
      * Create a new instance of this class.
@@ -51,8 +51,8 @@ public class StoreSB extends Store {
         this.pendingread = new ConcurrentHashMap<>();
         this.locktable = new ObjectLockTable();
 
-        this.num_abort_lock = 0;
-        this.num_abort_vc = 0;
+        this.numAbortLock = 0;
+        this.numAbortVc = 0;
     }
 
     public StoreSB(SmartBuffer buffer, HashMap<Long, Long> lastversion){
@@ -62,8 +62,8 @@ public class StoreSB extends Store {
         this.pendingread = new ConcurrentHashMap<>();
         this.locktable = new ObjectLockTable();
 
-        this.num_abort_lock = 0;
-        this.num_abort_vc = 0;
+        this.numAbortLock = 0;
+        this.numAbortVc = 0;
 
         this.lastversion = lastversion;
     }
@@ -99,7 +99,7 @@ public class StoreSB extends Store {
 
         if (!versionconflict.isEmpty()) {
             worker.update(versionconflict);
-            num_abort_vc++;
+            numAbortVc++;
             return futureWith(false);
         }
 
@@ -110,7 +110,7 @@ public class StoreSB extends Store {
             // Grab the lock on the store's side
             boolean res = locktable.grabLock(reads, writes, tid);
             if (!res) {
-                num_abort_lock++;
+                numAbortLock++;
             }
             return futureWith(res);
         } else {
@@ -203,6 +203,18 @@ public class StoreSB extends Store {
     public String toString() {
         return String.format("Store has %d pending transactions %s and %d transactions in buffer. Store aborted " +
                 "%d txns because of a lock conflict and %d txns because of a version conflict. "
-                + buffer.toString(), pending(), pendingkey(), numLink(), num_abort_lock, num_abort_vc);
+                + buffer.toString(), pending(), pendingkey(), numLink(), numAbortLock, numAbortVc);
+    }
+
+    public int getNumAborts() {
+        return numAbortLock + numAbortVc;
+    }
+
+    public int getNumAbortLock() {
+        return numAbortLock;
+    }
+
+    public int getNumAbortVc() {
+        return numAbortVc;
     }
 }

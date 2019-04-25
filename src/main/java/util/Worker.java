@@ -1,11 +1,13 @@
 package util;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
-import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 
 public class Worker {
@@ -54,14 +56,14 @@ public class Worker {
     /*
      * The number of transactions committed by this worker.
      */
-    private int num_commits;
+    private int numCommits;
 
-    private int num_aborts;
+    private int numAborts;
 
     /*
      * The number of txns aborted because cannot grab lock on the workers's side.
      */
-    public int num_abort_lock;
+    public int numAbortLock;
 
     public Store homestore;
 
@@ -81,9 +83,9 @@ public class Worker {
         this.wid = wid;
         this.storelist = storelist;
         WORKER_CONCUR = concur;
-        num_commits = 0;
-        num_aborts = 0;
-        num_abort_lock = 0;
+        numCommits = 0;
+        numAborts = 0;
+        numAbortLock = 0;
         if (concur) {
             pool = newFixedThreadPool(8);
             // pool = newCachedThreadPool();
@@ -97,9 +99,9 @@ public class Worker {
         this.storelist = storelist;
         WORKER_CONCUR = concur;
         ORIGINAL = original;
-        num_commits = 0;
-        num_aborts = 0;
-        num_abort_lock = 0;
+        numCommits = 0;
+        numAborts = 0;
+        numAbortLock = 0;
         if (concur) {
             pool = newFixedThreadPool(poolsize);
             // pool = newCachedThreadPool();
@@ -164,9 +166,9 @@ public class Worker {
                 boolean res = newtxn.original_prepare();
                 if (res) {
                     newtxn.original_commit();
-                    num_commits++;
+                    numCommits++;
                 } else {
-                    num_aborts++;
+                    numAborts++;
                 }
             } catch (InterruptedException e) {
                 // TODO Auto-generated catch block
@@ -178,9 +180,9 @@ public class Worker {
                 boolean res = newtxn.prepare();
                 if (res) {
                     newtxn.commit();
-                    num_commits++;
+                    numCommits++;
                 } else {
-                    num_aborts++;
+                    numAborts++;
                 }
             } catch (InterruptedException e) {
                 // TODO Auto-generated catch block
@@ -191,8 +193,20 @@ public class Worker {
 
 
     @Override
-    public String toString(){
+    public String toString() {
         return String.format("This worker completed %d transactions, aborted %d transactions in total, %d of which were due to a lock conflict",
-                num_commits, num_aborts, num_abort_lock);
+                numCommits, numAborts, numAbortLock);
+    }
+
+    public int getNumCommits() {
+        return this.numCommits;
+    }
+
+    public int getNumAborts() {
+        return numAborts;
+    }
+
+    public int getNumAbortLock() {
+        return numAbortLock;
     }
 }
