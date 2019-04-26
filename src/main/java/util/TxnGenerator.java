@@ -25,7 +25,7 @@ public class TxnGenerator {
     /* Generator for transaction sizes */
     private RandomGenerator gen;
 
-    public int txn_created;
+    private int txn_created;
 
     /* Ratio of reads to writes */
     private float writeRatio;
@@ -38,8 +38,7 @@ public class TxnGenerator {
     
     /* Generate a new unique oid */
     private long generateOid() {
-        long oid = last_unused_oid.incrementAndGet();
-        return oid;
+        return last_unused_oid.incrementAndGet();
     }
 
     private Txn initialtxn(int initial_cap) {
@@ -58,15 +57,14 @@ public class TxnGenerator {
         }
         
         long ntid = generateTid();
-        Txn initial_txn = new Txn(worker, ntid, reads, writes);
-        return initial_txn;
+        return new Txn(worker, ntid, reads, writes);
     }
 
     public TxnGenerator(Worker worker) {
         this(worker, RandomGenerator.constant(0.001f), 0.001f, 10, new AtomicLong());
     }
 
-    public TxnGenerator(Worker worker, RandomGenerator gen, float writeRatio, int txn_queue_capacity, AtomicLong last_unused_oid) {
+    TxnGenerator(Worker worker, RandomGenerator gen, float writeRatio, int txn_queue_capacity, AtomicLong last_unused_oid) {
         this.worker = worker;
         this.wid = worker.wid;
         this.queue = new ArrayBlockingQueue<>(txn_queue_capacity);
@@ -79,7 +77,7 @@ public class TxnGenerator {
     }
 
     /* Generate a new transaction */
-    public void newTxn() {
+    void newTxn() {
         // generate readsize and writesize
         Set<Long> objects = worker.lastversion.keySet();
         int interactions = (int) Math.floor(this.gen.random() * objects.size());
@@ -90,7 +88,7 @@ public class TxnGenerator {
         txn(readsize, writesize);
     }
 
-    public void newTestTxn() {
+    void newTestTxn() {
         int writesize = 0;
         int readsize = 2;
 
@@ -168,50 +166,13 @@ public class TxnGenerator {
 
     // Fast approximation of reservoir sampling
     private Set<Long> randomSet(int size) {
-        if (size*size > (int) (5 * last_unused_oid.get())) {
-            HashSet<Long> resset = new HashSet<>();
-            while (resset.size() < size){
-                Long i = (long)(Math.random()*last_unused_oid.get());
-                while (resset.contains(i)){
-                    i = (long)(Math.random()*last_unused_oid.get());
-                }
-                resset.add(i);
-            }
-
-            return resset;
-        }
-
-        Long[] res = new Long[size];
-
-        for (int i = 0; i < size; i++) {
-            res[i] = (long)i;
-        }
-
-        long t = 4 * size;
-        long i = size;
-        while (i < this.last_unused_oid.get() && i < t) {
-            int j = (int)(Math.random()*i);
-            if (j < size){
-                res[j] = i;
-            }
-            i = i + 1;
-        }
-
-        while (i < this.last_unused_oid.get()) {
-            double p = (1.0*size)/i;
-            double u = Math.random();
-            int g = (int)(Math.log(u)/Math.log(1 - p));
-            i = i + g;
-            if (i < this.last_unused_oid.get()) {
-                int j = (int)(Math.random()*size);
-                res[j] = i;
-                i = i + 1;
-            }
-        }
-
         HashSet<Long> resset = new HashSet<>();
-        for (Long oid : res) {
-            resset.add(oid);
+        while (resset.size() < size){
+            Long i = (long)(Math.random()*last_unused_oid.get());
+            while (resset.contains(i)){
+                i = (long)(Math.random()*last_unused_oid.get());
+            }
+            resset.add(i);
         }
         return resset;
     }

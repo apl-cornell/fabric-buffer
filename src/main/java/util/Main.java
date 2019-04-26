@@ -17,7 +17,7 @@ public class Main {
     /**
      * Number of workers.
      */
-    private static final int WORKER_NUM = 6;
+    private static final int WORKER_NUM = 1;
 
     /**
      * Duration of the test.
@@ -27,23 +27,23 @@ public class Main {
     /**
      * Initial number of objects per store.
      */
-    private static final int INITIAL_CAPACITY = 10000;
+    private static final int INITIAL_CAPACITY = 1000000;
 
     /*--------------------------------------Worker Configuration--------------------------------------*/
     /**
      * Number of worker threads
      */
-    private static final int NUM_THREAD = 1;
+    private static final int NUM_THREAD = 8;
 
     /**
      * Time interval for communicating with stores other than the home store.
      */
-    private static final int NON_HOME_INV = 20;
+    private static final int NON_HOME_INV = 0;
 
     /**
      * Time interval for communicating with the home store.
      */
-    private static final int HOME_INV = 20;
+    private static final int HOME_INV = 0;
 
     /**
      * Intervals for worker to start a new txn. Only used when WORKER_CONCUR is
@@ -96,7 +96,7 @@ public class Main {
     private AtomicLong last_unused_oid;
     
     
-    public void newTest(String[] args) {
+    private void newTest(String[] args) {
         //Initialize fields
         // List of stores.
         ArrayList<Store> storelist = new ArrayList<>();
@@ -117,8 +117,8 @@ public class Main {
             HashMap<Long, Long> lastversion_store = new HashMap<>();
             for (long oid = i*INITIAL_CAPACITY; oid < (i + 1)*INITIAL_CAPACITY; oid++){
                 last_unused_oid.incrementAndGet();
-                lastversion.put(oid, 0l);
-                lastversion_store.put(oid, 0l);
+                lastversion.put(oid, 0L);
+                lastversion_store.put(oid, 0L);
             }
             SmartBuffer buffer = new OptimizedNumLinkBuffer();
             Store store = new StoreSB(buffer, lastversion_store);
@@ -194,7 +194,7 @@ public class Main {
     class TxnGenThread implements Runnable {
         private TxnGenerator txngen;
         
-        public TxnGenThread(TxnGenerator txngen) {
+        TxnGenThread(TxnGenerator txngen) {
             this.txngen = txngen;
         }
 
@@ -209,8 +209,6 @@ public class Main {
             } catch (InterruptedException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
-            } finally {
-                // System.out.println(txngen.txn_created);
             }
         }
     }
@@ -218,7 +216,7 @@ public class Main {
     class TxnGenTestThread implements Runnable {
         private TxnGenerator txngen;
 
-        public TxnGenTestThread(TxnGenerator txngen) { this.txngen = txngen; }
+        TxnGenTestThread(TxnGenerator txngen) { this.txngen = txngen; }
 
         @Override
         public void run() {
@@ -239,7 +237,7 @@ public class Main {
     class WorkerPrepareThread implements Runnable {
         private Worker worker;
         
-        public WorkerPrepareThread(Worker worker) {
+        WorkerPrepareThread(Worker worker) {
             this.worker = worker;
         }
 
@@ -252,7 +250,6 @@ public class Main {
                             try {
                                 worker.startnewtxn();
                             } catch (Throwable e){
-                                System.err.println(e);
                                 e.printStackTrace();
                                 throw e;
                             }
