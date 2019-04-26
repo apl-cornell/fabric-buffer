@@ -25,7 +25,7 @@ public class TxnGenerator {
     /* Generator for transaction sizes */
     private RandomGenerator gen;
 
-    public int txn_created;
+    private int txn_created;
 
     /* Ratio of reads to writes */
     private float writeRatio;
@@ -64,7 +64,7 @@ public class TxnGenerator {
         this(worker, RandomGenerator.constant(0.001f), 0.001f, 10, new AtomicLong());
     }
 
-    public TxnGenerator(Worker worker, RandomGenerator gen, float writeRatio, int txn_queue_capacity, AtomicLong last_unused_oid) {
+    TxnGenerator(Worker worker, RandomGenerator gen, float writeRatio, int txn_queue_capacity, AtomicLong last_unused_oid) {
         this.worker = worker;
         this.wid = worker.wid;
         this.queue = new ArrayBlockingQueue<>(txn_queue_capacity);
@@ -77,7 +77,7 @@ public class TxnGenerator {
     }
 
     /* Generate a new transaction */
-    public void newTxn() {
+    void newTxn() {
         // generate readsize and writesize
         Set<Long> objects = worker.lastversion.keySet();
         int interactions = (int) Math.floor(this.gen.random() * objects.size());
@@ -88,7 +88,7 @@ public class TxnGenerator {
         txn(readsize, writesize);
     }
 
-    public void newTestTxn() {
+    void newTestTxn() {
         int writesize = 0;
         int readsize = 2;
 
@@ -166,17 +166,13 @@ public class TxnGenerator {
 
     // Fast approximation of reservoir sampling
     private Set<Long> randomSet(int size) {
-        if (size*size > (int) (5 * last_unused_oid.get())) {
-            HashSet<Long> resset = new HashSet<>();
-            while (resset.size() < size){
-                Long i = (long)(Math.random()*last_unused_oid.get());
-                while (resset.contains(i)){
-                    i = (long)(Math.random()*last_unused_oid.get());
-                }
-                resset.add(i);
+        HashSet<Long> resset = new HashSet<>();
+        while (resset.size() < size){
+            Long i = (long)(Math.random()*last_unused_oid.get());
+            while (resset.contains(i)){
+                i = (long)(Math.random()*last_unused_oid.get());
             }
-
-            return resset;
+            resset.add(i);
         }
 
         Long[] res = new Long[size];
@@ -207,7 +203,6 @@ public class TxnGenerator {
             }
         }
 
-        HashSet<Long> resset = new HashSet<>(Arrays.asList(res));
-        return resset;
+        return new HashSet<>(Arrays.asList(res));
     }
 }

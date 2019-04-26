@@ -17,7 +17,7 @@ public class Main {
     /**
      * Number of workers.
      */
-    private static final int WORKER_NUM = 6;
+    private static final int WORKER_NUM = 1;
 
     /**
      * Duration of the test.
@@ -29,21 +29,28 @@ public class Main {
      */
     private static final int INITIAL_CAPACITY = 10000;
 
+    /*--------------------------------------Store Configuration--------------------------------------*/
+    /**
+     * If true, run the store with smart buffer. If false, run the store without smart buffer.
+     * WITH_BUFFER = false implies ORIGINAL = true.
+     */
+    private static final boolean WITH_BUFFER = true;
+
     /*--------------------------------------Worker Configuration--------------------------------------*/
     /**
      * Number of worker threads
      */
-    private static final int NUM_THREAD = 1;
+    private static final int NUM_THREAD = 8;
 
     /**
      * Time interval for communicating with stores other than the home store.
      */
-    private static final int NON_HOME_INV = 20;
+    private static final int NON_HOME_INV = 0;
 
     /**
      * Time interval for communicating with the home store.
      */
-    private static final int HOME_INV = 20;
+    private static final int HOME_INV = 0;
 
     /**
      * Intervals for worker to start a new txn. Only used when WORKER_CONCUR is
@@ -66,7 +73,7 @@ public class Main {
     /**
      * If true, run the testing with original 2PC protocol.
      */
-    private static final boolean ORIGINAL = false;
+    private static final boolean ORIGINAL = true;
 
     /*-----------------------------------Txn Generator Configuration-----------------------------------*/
     /**
@@ -106,7 +113,7 @@ public class Main {
      *                store.
      * @param writeRatio The proportion of queried objects that are writes.
      */
-    public void newTest(int stores, int workers, int threads, int dbSize, RandomGenerator txnSize, float writeRatio) {
+    private void newTest(int stores, int workers, int threads, int dbSize, RandomGenerator txnSize, float writeRatio) {
         //Initialize fields
         // List of stores.
         ArrayList<Store> storelist = new ArrayList<>();
@@ -127,11 +134,11 @@ public class Main {
             HashMap<Long, Long> lastversion_store = new HashMap<>();
             for (long oid = i*dbSize; oid < (i + 1)*dbSize; oid++){
                 last_unused_oid.incrementAndGet();
-                lastversion.put(oid, 0l);
-                lastversion_store.put(oid, 0l);
+                lastversion.put(oid, 0L);
+                lastversion_store.put(oid, 0L);
             }
             SmartBuffer buffer = new OptimizedNumLinkBuffer();
-            Store store = new StoreSB(buffer, lastversion_store);
+            Store store = new StoreSB(buffer, lastversion_store, WITH_BUFFER);
             buffer.setStore(store);
             storelist.add(store);
         }
@@ -200,7 +207,7 @@ public class Main {
     class TxnGenThread implements Runnable {
         private TxnGenerator txngen;
         
-        public TxnGenThread(TxnGenerator txngen) {
+        TxnGenThread(TxnGenerator txngen) {
             this.txngen = txngen;
         }
 
@@ -215,8 +222,6 @@ public class Main {
             } catch (InterruptedException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
-            } finally {
-                // System.out.println(txngen.txn_created);
             }
         }
     }
@@ -224,7 +229,7 @@ public class Main {
     class TxnGenTestThread implements Runnable {
         private TxnGenerator txngen;
 
-        public TxnGenTestThread(TxnGenerator txngen) { this.txngen = txngen; }
+        TxnGenTestThread(TxnGenerator txngen) { this.txngen = txngen; }
 
         @Override
         public void run() {
@@ -245,7 +250,7 @@ public class Main {
     class WorkerPrepareThread implements Runnable {
         private Worker worker;
         
-        public WorkerPrepareThread(Worker worker) {
+        WorkerPrepareThread(Worker worker) {
             this.worker = worker;
         }
 
@@ -258,7 +263,6 @@ public class Main {
                             try {
                                 worker.startnewtxn();
                             } catch (Throwable e){
-                                System.err.println(e);
                                 e.printStackTrace();
                                 throw e;
                             }

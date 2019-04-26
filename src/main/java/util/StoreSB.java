@@ -38,13 +38,15 @@ public class StoreSB extends Store {
     private int numAbortLock;
     private int numAbortVc;
 
+    private boolean WITH_BUFFER;
+
     /**
      * Create a new instance of this class.
      *
      * @param buffer A buffer to use for transactions with pending dependencies.
      *               This should be an empty buffer.
      */
-    public StoreSB(SmartBuffer buffer) {
+    StoreSB(SmartBuffer buffer) {
         this.buffer = buffer;
         this.lastversion = new HashMap<>();
         this.pending = new ConcurrentHashMap<>();
@@ -55,7 +57,7 @@ public class StoreSB extends Store {
         this.numAbortVc = 0;
     }
 
-    public StoreSB(SmartBuffer buffer, HashMap<Long, Long> lastversion){
+    StoreSB(SmartBuffer buffer, HashMap<Long, Long> lastversion, boolean WITH_BUFFER){
         this.buffer = buffer;
         this.lastversion = new HashMap<>();
         this.pending = new ConcurrentHashMap<>();
@@ -66,6 +68,8 @@ public class StoreSB extends Store {
         this.numAbortVc = 0;
 
         this.lastversion = lastversion;
+
+        this.WITH_BUFFER = WITH_BUFFER;
     }
 
     @Override
@@ -79,17 +83,9 @@ public class StoreSB extends Store {
         Set<ObjectVN> actualdeps = new HashSet<>();
         Set<ObjectVN> versionconflict = new HashSet<>();
 
-        if (reads == null){
-            reads = new HashSet<>();
-        }
-
-        if (writes == null){
-            writes = new HashSet<>();
-        }
-
         for (ObjectVN object : reads) {
             // if there is a older version, there is a version conflict and prepare fails.
-            if (object.vnum < lastversion.getOrDefault(object.oid, 0l)) {
+            if (object.vnum < lastversion.getOrDefault(object.oid, 0L)) {
                 versionconflict.add(new ObjectVN(object.oid, lastversion.get(object.oid)));
                 // if there is a version that's never seen, add that to the dependency of this transaction
             } else if (object.vnum > lastversion.get(object.oid)) {
@@ -114,8 +110,12 @@ public class StoreSB extends Store {
             }
             return futureWith(res);
         } else {
-            // Result resolved to true if the dependencies of [tid] are resolved. resolved to false only when there is version conflict
-            return buffer.add(tid, reads);
+            if (WITH_BUFFER){
+                // Result resolved to true if the dependencies of [tid] are resolved. resolved to false only when there is version conflict
+                return buffer.add(tid, reads);
+            } else {
+                return futureWith(false);
+            }
         }
     }
 
@@ -137,7 +137,9 @@ public class StoreSB extends Store {
             }
 
             // Remove object from the buffer
-            buffer.remove(write);
+            if (WITH_BUFFER){
+                buffer.remove(write);
+            }
         }
         // Release Lock
         locktable.releaseLock(pendingread.getOrDefault(tid, new HashSet<>()), pending.getOrDefault(tid, new HashSet<>()), tid);
@@ -149,7 +151,9 @@ public class StoreSB extends Store {
     public void abort(long tid) {
         pending.remove(tid);
         pendingread.remove(tid);
-        buffer.delete(tid);
+        if (WITH_BUFFER){
+            buffer.delete(tid);
+        }
     }
 
     /**
