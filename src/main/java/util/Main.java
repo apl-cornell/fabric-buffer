@@ -1,13 +1,17 @@
 package util;
 
+import picocli.CommandLine;
+import smartbuffer.OptimizedNumLinkBuffer;
+import smartbuffer.SmartBuffer;
+
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicLong;
 
-import smartbuffer.*;
-
-public class Main {
+@CommandLine.Command (name = "fbuffer", version = "Fabric buffer tester")
+public class Main implements Runnable {
     /*--------------------------------------General Configuration-------------------------------------*/
     /**
      * Number of stores.
@@ -284,9 +288,40 @@ public class Main {
         }
     }
 
-    public static void main(String[] args) {
-        (new Main()).newTest(2, 2, 16, 10000, RandomGenerator.constant(0.001f), 0.1f);
+    @CommandLine.Option (names = "-O", defaultValue = ".",
+            description = "Specify where to place output diagnostic files.")
+    private Path path;
 
+    @CommandLine.Option (names = {"-stores"}, description = "Number of stores")
+    private int stores = 1;
+
+    @CommandLine.Option (names = {"-workers"}, description = "Number of workers")
+    private int workers = 1;
+
+    @CommandLine.Option (names = {"-threads"}, description = "Number of threads per worker")
+    private int threads = 8;
+
+    @CommandLine.Option (names = {"-objects"}, description = "Number of objects per store")
+    private int objects = 10000;
+
+    @CommandLine.Option (names = {"-size"}, description = "Proportion of objects queried per transaction")
+    private float txnSize = 0.001f;
+
+    @CommandLine.Option (names = {"-writeratio"}, description = "Proportion of queried objects that are writes")
+    private float writes = 0.1f;
+
+    @Override
+    public void run() {
+        // testing stuff
+//        System.out.println(stores);
+//        System.out.println(workers);
+//        System.out.println(threads);
+//        System.out.println(objects);
+        (new Main()).newTest(stores, workers, threads, objects, RandomGenerator.constant(txnSize), writes);
+    }
+
+    public static void main(String[] args) {
+        CommandLine.run(new Main(), args);
         System.exit(0);
     }
 }

@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'application'
 }
 
 group 'fabric-buffer'
@@ -15,8 +16,32 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
     implementation group: 'com.google.guava', name: 'guava', version: '23.5-jre'
+    implementation 'info.picocli:picocli:4.0.0-alpha-2'
 }
+
+configurations.implementation.setCanBeResolved(true)
 
 test {
     useJUnitPlatform()
+}
+
+application {
+    mainClassName = 'util.Main'
+}
+
+distributions {
+    main {
+        contents {
+
+        }
+    }
+}
+
+task customFatJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'util.Main'
+    }
+    baseName = 'all-in-one-jar'
+    from { configurations.implementation.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
 }
