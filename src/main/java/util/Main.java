@@ -27,7 +27,14 @@ public class Main {
     /**
      * Initial number of objects per store.
      */
-    private static final int INITIAL_CAPACITY = 1000000;
+    private static final int INITIAL_CAPACITY = 10000;
+
+    /*--------------------------------------Store Configuration--------------------------------------*/
+    /**
+     * If true, run the store with smart buffer. If false, run the store without smart buffer.
+     * WITH_BUFFER = false implies ORIGINAL = true.
+     */
+    private static final boolean WITH_BUFFER = true;
 
     /*--------------------------------------Worker Configuration--------------------------------------*/
     /**
@@ -66,7 +73,7 @@ public class Main {
     /**
      * If true, run the testing with original 2PC protocol.
      */
-    private static final boolean ORIGINAL = false;
+    private static final boolean ORIGINAL = true;
 
     /*-----------------------------------Txn Generator Configuration-----------------------------------*/
     /**
@@ -121,7 +128,7 @@ public class Main {
                 lastversion_store.put(oid, 0L);
             }
             SmartBuffer buffer = new OptimizedNumLinkBuffer();
-            Store store = new StoreSB(buffer, lastversion_store);
+            Store store = new StoreSB(buffer, lastversion_store, WITH_BUFFER);
             buffer.setStore(store);
             storelist.add(store);
         }
