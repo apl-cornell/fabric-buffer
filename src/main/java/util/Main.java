@@ -293,34 +293,40 @@ public class Main implements Runnable {
     }
 
     @CommandLine.Option (names = "-O", defaultValue = ".",
-            description = "Specify where to place output diagnostic files.")
+            description = "Specify where to place output diagnostic files (default: ${DEFAULT-VALUE})")
     private Path path;
 
-    @CommandLine.Option (names = {"-stores"}, description = "Number of stores")
-    private int stores = 1;
+    @CommandLine.Option (names = {"-stores"}, defaultValue = "1",
+            description = "Number of stores (default: ${DEFAULT-VALUE})")
+    private int stores;
 
-    @CommandLine.Option (names = {"-workers"}, description = "Number of workers")
-    private int workers = 1;
+    @CommandLine.Option (names = {"-workers"}, defaultValue = "1",
+            description = "Number of workers (default: ${DEFAULT-VALUE})")
+    private int workers;
 
-    @CommandLine.Option (names = {"-threads"}, description = "Number of threads per worker")
-    private int threads = 8;
+    @CommandLine.Option (names = {"-threads"}, defaultValue = "8",
+            description = "Number of threads per worker (default: ${DEFAULT-VALUE})")
+    private int threads;
 
-    @CommandLine.Option (names = {"-objects"}, description = "Number of objects per store")
-    private int objects = 10000;
+    @CommandLine.Option (names = {"-objects"}, defaultValue = "10000",
+            description = "Number of objects per store (default: ${DEFAULT-VALUE})")
+    private int objects;
 
-    @CommandLine.Option (names = {"-size"}, description = "Proportion of objects queried per transaction")
-    private float txnSize = 0.001f;
+    @CommandLine.Option (names = {"-size"}, defaultValue = "0.001",
+            description = "Proportion of objects queried per transaction (default: ${DEFAULT-VALUE})")
+    private float txnSize;
 
-    @CommandLine.Option (names = {"-writeratio"}, description = "Proportion of queried objects that are writes")
-    private float writes = 0.1f;
+    @CommandLine.Option (names = {"-writeratio"}, defaultValue = "0.1",
+            description = "Proportion of queried objects that are writes (default: ${DEFAULT-VALUE})")
+    private float writes;
+
+    @CommandLine.Option (names = {"-time"}, defaultValue = "10000",
+            description = "Time to run the simulation for (default: ${DEFAULT-VALUE})")
+    private int runtime;
 
     @Override
     public void run() {
         // testing stuff
-//        System.out.println(stores);
-//        System.out.println(workers);
-//        System.out.println(threads);
-//        System.out.println(objects);
         if (!Files.exists(path)) {
             System.err.println("Error: path " + path + " not found");
             return;
@@ -330,6 +336,7 @@ public class Main implements Runnable {
         Path storesOutputPath = Paths.get(pathString, "stores.csv");
         Path workersOutputPath = Paths.get(pathString, "workers.csv");
 
+        // TODO: add file names as CLI parameters
         try (PrintWriter storesWriter = new PrintWriter(storesOutputPath.toFile());
              PrintWriter workersWriter = new PrintWriter(workersOutputPath.toFile())) {
 
