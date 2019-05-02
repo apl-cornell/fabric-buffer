@@ -113,6 +113,7 @@ public class Main implements Runnable {
     /**
      * Run a test, generating and running transactions for the set duration.
      *
+     * @param duration Time to run the simulation for (in milliseconds).
      * @param stores The number of stores.
      * @param workers The number of workers.
      * @param threads The number of threads <b>per worker</b>.
@@ -121,7 +122,13 @@ public class Main implements Runnable {
      *                store.
      * @param writeRatio The proportion of queried objects that are writes.
      */
-    private void newTest(int stores, int workers, int threads, int dbSize, RandomGenerator txnSize, float writeRatio) {
+    private void newTest(int duration,
+                         int stores,
+                         int workers,
+                         int threads,
+                         int dbSize,
+                         RandomGenerator txnSize,
+                         float writeRatio) {
         //Initialize fields
         // List of stores.
         ArrayList<Store> storelist = new ArrayList<>();
@@ -192,7 +199,7 @@ public class Main implements Runnable {
         }
         
         try {
-            Thread.sleep(DURATION);
+            Thread.sleep(duration);
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -340,7 +347,7 @@ public class Main implements Runnable {
         try (PrintWriter storesWriter = new PrintWriter(storesOutputPath.toFile());
              PrintWriter workersWriter = new PrintWriter(workersOutputPath.toFile())) {
 
-            (new Main()).newTest(stores, workers, threads, objects, RandomGenerator.constant(txnSize), writes);
+            (new Main()).newTest(runtime, stores, workers, threads, objects, RandomGenerator.constant(txnSize), writes);
         } catch (IOException e) {
             System.err.println("Unexpected error when creating file output streams: " + e.getMessage());
         }
