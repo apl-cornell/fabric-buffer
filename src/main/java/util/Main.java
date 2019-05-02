@@ -4,7 +4,11 @@ import picocli.CommandLine;
 import smartbuffer.OptimizedNumLinkBuffer;
 import smartbuffer.SmartBuffer;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -317,7 +321,22 @@ public class Main implements Runnable {
 //        System.out.println(workers);
 //        System.out.println(threads);
 //        System.out.println(objects);
-        (new Main()).newTest(stores, workers, threads, objects, RandomGenerator.constant(txnSize), writes);
+        if (!Files.exists(path)) {
+            System.err.println("Error: path " + path + " not found");
+            return;
+        }
+
+        String pathString = path.toString();
+        Path storesOutputPath = Paths.get(pathString, "stores.csv");
+        Path workersOutputPath = Paths.get(pathString, "workers.csv");
+
+        try (PrintWriter storesWriter = new PrintWriter(storesOutputPath.toFile());
+             PrintWriter workersWriter = new PrintWriter(workersOutputPath.toFile())) {
+
+            (new Main()).newTest(stores, workers, threads, objects, RandomGenerator.constant(txnSize), writes);
+        } catch (IOException e) {
+
+        }
     }
 
     public static void main(String[] args) {
