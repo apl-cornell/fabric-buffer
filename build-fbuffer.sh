@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Xi compiler build script
+# Fabric buffer CLI build script
 #
 
 # Create the compiler using gradle, create xic binary
