@@ -342,7 +342,7 @@ public class Main implements Runnable {
 
             (new Main()).newTest(stores, workers, threads, objects, RandomGenerator.constant(txnSize), writes);
         } catch (IOException e) {
-
+            System.err.println("Unexpected error when creating file output streams: " + e.getMessage());
         }
     }
 
