@@ -369,7 +369,7 @@ public class Main implements Runnable {
              PrintWriter workersWriter = new PrintWriter(workersOutputPath.toFile())) {
 
             Pair<List<Store>, List<Worker>> benchmarks =
-                    (new Main()).newTest(
+                    this.newTest(
                             runtime,
                             stores,
                             workers,
