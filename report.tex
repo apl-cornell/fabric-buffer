@@ -1,0 +1,151 @@
+\documentclass{article}
+
+\usepackage{arxiv}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{lipsum}
+
+\title{Smart Buffer Project Report}
+
+\author{
+  Samantha (Yuhan) Deng
+  %% examples of more authors
+   \And
+ Kyrylo Chernyshov
+  %% \AND
+  %% Coauthor \\
+  %% Affiliation \\
+  %% Address \\
+  %% \texttt{email} \\
+  %% \And
+  %% Coauthor \\
+  %% Affiliation \\
+  %% Address \\
+  %% \texttt{email} \\
+  %% \And
+  %% Coauthor \\
+  %% Affiliation \\
+  %% Address \\
+  %% \texttt{email} \\
+}
+
+\begin{document}
+\maketitle
+
+% \begin{abstract}
+% \lipsum[1]
+% \end{abstract}
+
+
+% keywords can be removed
+% \keywords{First \and Second keyword \and More}
+
+
+\section{Introduction}
+In the Two-Phase Commit protocol, after a worker sends its decision of
+abort/commit to the store, the worker needs to wait for the store's reply. In
+other words, the worker is waiting for a message whose content it already knows.
+The waiting is necessary to acount for the asynchrony of rthe underlying
+communication channel. However, assuming that the communication channel is
+synchronous most of the time, the waiting is unnecessary most of the time.
+
+If the worker does not block on the reply of the store, fter sending out the
+commit message for a transaction, the worker can start an new transaction that
+depends on the previous transaction immediately. From the worker's point of
+view, this is a 1.5-Phase Commit. However, the messages may arrive the store in
+an order different from the worker sends them, and the store needs to sort out
+the order of message arrival. 
+
+In order to enable the store to deal with out of order messages, we designed a
+data structure called smart buffer on the store's side. In Section
+\ref{sec:design}, we will present our detailed design of the data structure and
+how the data structure is embedded in the framework. Section
+\ref{sec:implementation} contains implementation of the data structure in a toy
+example of worker-store setup and in Fabric. Finally, performance results are
+shown in Section \ref{sec:performance}.
+
+\section{Design}
+\label{sec:design}
+
+\subsection{Design Goal}
+To illustrate the design goal, consider two scenarios.
+
+\paragraph{Scenario 1} Given a worker $w$, a store $s$ and two transactions $t_1$
+and $t_2$. Assume that $t_2$ depends on $t_1$, in other words, there exists some
+object $o$ such that $t_1$ writes version $v$ of $o$ and $t_2$ reads version $v$
+of $o$. If $w$ sends out commit message for $t_1$ and sends out prepare message
+for $t_2$ without waiting for $s$'s reply for $t_1$, $s$ may receive the prepare
+message of $t_2$ before receiving the commit message of $t_1$. Then, the store
+needs to prepare for $t_2$ that reads $v$ of $o$, but it only has $v - 1$ of
+$o$. 
+
+One option is to make $s$ abort the prepare for $t_2$. However, if $s$ receives
+the messages in an order the same as $w$ sends them, the prepare of $t_2$ won't
+fail because of the unknown version $v$ of $o$. Thus, insteand of directly
+aborting the prepare of $t_2$, $s$ should wait until it receives the commit
+message of $t_1$ and updates $o$ to version $v$, and then start the prepare of
+$t_2$. Thus, the data structure needs to allow the store block transaction
+prepare until all unknown versions of objects of the transaction is learnt by
+the store.
+
+\paragraph{Scenario 2} Given a store $s$ and a transaction $t$. Assume that the
+store needs a newer version of some object $o$ to start the prepare of $t$ and
+$t$ also reads version $v$ of some other object $o'$. If $s$ already has version
+$v'$ of $o'$, or $s$ commits version $v'$ of $o$ while waiting for the newer
+version of $o$ and $v' > v$, the prepare of $t$ will always fail because of
+version conflict. Then, the prepare of $t$ should be aborted immediately even if
+the store $s$ has not seen the newer version of $o$. 
+
+Thus, the data structure nees to allow the store aborts pending transaction
+prepare as soon as version conflicts happen.
+
+\subsection{Smart Buffer Design}
+The Smart Buffer interface has three methods: $\mathtt{add}$, $\mathtt{remove}$
+and $\mathtt{delete}$.
+\begin{itemize}
+  \item $\mathtt{add(tid, deps)}$: $\mathtt{tid}$ is the ID of a transaction.
+  $\mathtt{deps}$ is a set of objects with corresponding versions that the
+  transaction depends on (i.e. reads). The method adds the transaction with
+  $\mathtt{tid}$ and depends on $\mathtt{deps}$ to the buffer.
+  \item $\mathtt{remove(object)}$: $\mathtt{object}$ is some version of an
+  object. The method let the buffer know this version of an object is known to
+  the store.
+  \item $\mathtt{delete(tid)}$: $\mathtt{tid}$ is hte ID of a transaction. The
+  method deletes the transaction with $tid$ from the buffer.
+\end{itemize}
+For transactions in the buffer, if version conflicts happen before all objects
+the transaction read are known to the store, the buffer will notify the store to
+abort the transaction. If all objects the transaction read are known to the
+store, the buffer will notify the store the store to prepare for the transaction
+again.
+
+\subsection{Smart Buffer's Usage in the Store}
+When the store receives a transaction prepare message, it tries to prepare for
+the transaction. If the perpare does not contain version conflict and has some
+version of an object newer than the version the store has, the store adds the
+transaction and the objects it read to the buffer. 
+
+When the store receives a transaction commit message, for each object the commit
+updates, the store remove the object from the buffer. 
+
+When the buffer notify the store to perpare for some transaction, the store
+starts the prepare for the transaction again and notifies the worker of the
+result of the prepare. When the buffer notify the store to abort some
+transaction, the store aborts the transaction and notifies the worker of the
+result.
+
+\section{Implementation}
+\label{sec:implementation}
+\subsection{NumLinkBuffer}
+
+\section{Performance}
+\label{sec:performance}
+
+\end{document}
