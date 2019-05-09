@@ -158,7 +158,6 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
                 }
             }
             unresolveddepsMap.remove(object);
-            depsMap.remove(object);
         }
     }
 
