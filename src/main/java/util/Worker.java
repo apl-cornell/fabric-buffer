@@ -1,5 +1,7 @@
 package util;
 
+import benchmark.WorkerBenchmark;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -199,7 +201,7 @@ public class Worker {
     }
 
     public int getNumCommits() {
-        return this.numCommits;
+        return numCommits;
     }
 
     public int getNumAborts() {
@@ -208,5 +210,9 @@ public class Worker {
 
     public int getNumAbortLock() {
         return numAbortLock;
+    }
+
+    public WorkerBenchmark getCSVData() {
+        return new WorkerBenchmark(getNumCommits(), getNumAborts(), getNumAbortLock());
     }
 }

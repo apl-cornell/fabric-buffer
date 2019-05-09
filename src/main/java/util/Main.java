@@ -1,5 +1,8 @@
 package util;
 
+import benchmark.CSVData;
+import benchmark.StoreBenchmark;
+import benchmark.WorkerBenchmark;
 import picocli.CommandLine;
 import smartbuffer.OptimizedNumLinkBuffer;
 import smartbuffer.SmartBuffer;
@@ -12,7 +15,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 @CommandLine.Command (name = "fbuffer", version = "Fabric buffer tester")
 public class Main implements Runnable {
@@ -122,7 +127,7 @@ public class Main implements Runnable {
      *                store.
      * @param writeRatio The proportion of queried objects that are writes.
      */
-    private void newTest(int duration,
+    private Pair<List<StoreBenchmark>, List<WorkerBenchmark>> newTest(int duration,
                          int stores,
                          int workers,
                          int threads,
@@ -207,6 +212,16 @@ public class Main implements Runnable {
         
         exit = true;
 
+        List<StoreBenchmark> storeBenchmarks = storelist.stream()
+                .map(Store::getCSVData)
+                .collect(Collectors.toList());
+
+        List<WorkerBenchmark> workerBenchmarks = workerlist.stream()
+                .map(Worker::getCSVData)
+                .collect(Collectors.toList());
+
+
+        // TODO: remove these
         for (Store s : storelist){
             System.out.println(s);
         }
@@ -214,6 +229,18 @@ public class Main implements Runnable {
         for (Worker w : workerlist) {
             System.out.println(w);
         }
+
+        return new Pair<>(storeBenchmarks, workerBenchmarks);
+    }
+
+    // TODO: add custom CSV settings (delimiter etc) as parameter
+    private static void printRowToCSV(PrintWriter writer, CSVData data) {
+        printRowToCSV(writer, data.row());
+    }
+
+    private static void printRowToCSV(PrintWriter writer, String[] row) {
+        String rowAsText = String.join(", ", row);
+        writer.println(rowAsText);
     }
     
     /*
@@ -347,7 +374,17 @@ public class Main implements Runnable {
         try (PrintWriter storesWriter = new PrintWriter(storesOutputPath.toFile());
              PrintWriter workersWriter = new PrintWriter(workersOutputPath.toFile())) {
 
-            (new Main()).newTest(runtime, stores, workers, threads, objects, RandomGenerator.constant(txnSize), writes);
+            Pair<List<StoreBenchmark>, List<WorkerBenchmark>> benchmarks =
+                    (new Main()).newTest(runtime, stores, workers, threads, objects, RandomGenerator.constant(txnSize), writes);
+
+            // to print a list of benchmarks to csv, we first print the header and then print each benchmark's row
+            List<StoreBenchmark> storeBenchmarks = benchmarks.getFirst();
+            printRowToCSV(storesWriter, StoreBenchmark.header());
+            storeBenchmarks.forEach(benchmark -> printRowToCSV(storesWriter, benchmark));
+
+            List<WorkerBenchmark> workerBenchmarks = benchmarks.getSecond();
+            printRowToCSV(workersWriter, WorkerBenchmark.header());
+            workerBenchmarks.forEach(benchmark -> printRowToCSV(workersWriter, benchmark));
         } catch (IOException e) {
             System.err.println("Unexpected error when creating file output streams: " + e.getMessage());
         }

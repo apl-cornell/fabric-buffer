@@ -40,7 +40,7 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
 
     /*
      * A map from transactions in the buffer to associated futures to be filled.
-     * The keys are synchronized with {@code numLink}.
+     * The keys are synchronized with {@code getNumLink}.
      */
     private HashMap<Long, CompletableFuture<Boolean>> futures;
 
@@ -198,8 +198,23 @@ public class OptimizedNumLinkBuffer implements SmartBuffer {
     }
 
     @Override
-    public int numLink() {
+    public int getNumLink() {
         return numLink.size();
+    }
+
+    @Override
+    public int getNumResolve() {
+        return num_resolve;
+    }
+
+    @Override
+    public int getNumAbortLock() {
+        return num_abort_lock;
+    }
+
+    @Override
+    public int getNumAbortVC() {
+        return num_abort_vc;
     }
 
     @Override
