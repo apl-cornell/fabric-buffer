@@ -128,7 +128,7 @@ public class Main implements Runnable {
      *                store.
      * @param writeRatio The proportion of queried objects that are writes.
      */
-    private Pair<List<StoreBenchmark>, List<WorkerBenchmark>> newTest(int duration,
+    private Pair<List<Store>, List<Worker>> newTest(int duration,
                          int stores,
                          int workers,
                          int threads,
@@ -213,25 +213,7 @@ public class Main implements Runnable {
         
         exit = true;
 
-        List<StoreBenchmark> storeBenchmarks = storelist.stream()
-                .map(Store::getCSVData)
-                .collect(Collectors.toList());
-
-        List<WorkerBenchmark> workerBenchmarks = workerlist.stream()
-                .map(Worker::getCSVData)
-                .collect(Collectors.toList());
-
-
-        // TODO: remove these
-        for (Store s : storelist){
-            System.out.println(s);
-        }
-
-        for (Worker w : workerlist) {
-            System.out.println(w);
-        }
-
-        return new Pair<>(storeBenchmarks, workerBenchmarks);
+        return new Pair<>(storelist, workerlist);
     }
 
     // TODO: add custom CSV settings (delimiter etc) as parameter
@@ -367,6 +349,10 @@ public class Main implements Runnable {
             description = "Time to run the simulation for (default: ${DEFAULT-VALUE})")
     private int runtime;
 
+    @CommandLine.Option (names = "-verbose",
+            description = "Print benchmark output to the console")
+    private boolean verbose = false;
+
     @Override
     public void run() {
         // testing stuff
@@ -382,15 +368,37 @@ public class Main implements Runnable {
         try (PrintWriter storesWriter = new PrintWriter(storesOutputPath.toFile());
              PrintWriter workersWriter = new PrintWriter(workersOutputPath.toFile())) {
 
-            Pair<List<StoreBenchmark>, List<WorkerBenchmark>> benchmarks =
-                    (new Main()).newTest(runtime, stores, workers, threads, objects, RandomGenerator.constant(txnSize), writes);
+            Pair<List<Store>, List<Worker>> benchmarks =
+                    (new Main()).newTest(
+                            runtime,
+                            stores,
+                            workers,
+                            threads,
+                            objects,
+                            RandomGenerator.constant(txnSize),
+                            writes
+                    );
+
+            List<Store> stores = benchmarks.getFirst();
+            List<Worker> workers = benchmarks.getSecond();
+
+            // print benchmarks to sysout if requested
+            if (verbose) {
+                stores.forEach(System.out::println);
+                workers.forEach(System.out::println);
+            }
 
             // to print a list of benchmarks to csv, we first print the header and then print each benchmark's row
-            List<StoreBenchmark> storeBenchmarks = benchmarks.getFirst();
+
+            List<StoreBenchmark> storeBenchmarks = stores.stream()
+                    .map(Store::getCSVData)
+                    .collect(Collectors.toList());
             printRowToCSV(storesWriter, StoreBenchmark.header());
             storeBenchmarks.forEach(benchmark -> printRowToCSV(storesWriter, benchmark));
 
-            List<WorkerBenchmark> workerBenchmarks = benchmarks.getSecond();
+            List<WorkerBenchmark> workerBenchmarks = workers.stream()
+                    .map(Worker::getCSVData)
+                    .collect(Collectors.toList());
             printRowToCSV(workersWriter, WorkerBenchmark.header());
             workerBenchmarks.forEach(benchmark -> printRowToCSV(workersWriter, benchmark));
         } catch (IOException e) {
