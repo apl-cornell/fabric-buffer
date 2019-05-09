@@ -7,6 +7,7 @@ import picocli.CommandLine;
 import smartbuffer.OptimizedNumLinkBuffer;
 import smartbuffer.SmartBuffer;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
@@ -330,6 +331,14 @@ public class Main implements Runnable {
             description = "Specify where to place output diagnostic files (default: ${DEFAULT-VALUE})")
     private Path path;
 
+    @CommandLine.Option (names = "-storefile", defaultValue = "stores.csv",
+            description = "File name for store benchmarks (default: ${DEFAULT-VALUE})")
+    private File storefile;
+
+    @CommandLine.Option (names = "-workerfile", defaultValue = "workers.csv",
+            description = "File name for worker benchmarks (default: ${DEFAULT-VALUE})")
+    private File workerfile;
+
     @CommandLine.Option (names = {"-stores"}, defaultValue = "1",
             description = "Number of stores (default: ${DEFAULT-VALUE})")
     private int stores;
@@ -367,10 +376,9 @@ public class Main implements Runnable {
         }
 
         String pathString = path.toString();
-        Path storesOutputPath = Paths.get(pathString, "stores.csv");
-        Path workersOutputPath = Paths.get(pathString, "workers.csv");
+        Path storesOutputPath = Paths.get(pathString, storefile.toString());
+        Path workersOutputPath = Paths.get(pathString, workerfile.toString());
 
-        // TODO: add file names as CLI parameters
         try (PrintWriter storesWriter = new PrintWriter(storesOutputPath.toFile());
              PrintWriter workersWriter = new PrintWriter(workersOutputPath.toFile())) {
 
