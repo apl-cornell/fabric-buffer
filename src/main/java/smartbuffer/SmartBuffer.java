@@ -77,5 +77,11 @@ public interface SmartBuffer {
      */
     void setStore(Store store);
 
-    int numLink();
+    int getNumLink();
+
+    int getNumResolve();
+
+    int getNumAbortLock();
+
+    int getNumAbortVC();
 }

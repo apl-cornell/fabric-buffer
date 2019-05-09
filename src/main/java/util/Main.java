@@ -1,14 +1,24 @@
 package util;
 
+import benchmark.CSVData;
+import benchmark.StoreBenchmark;
+import benchmark.WorkerBenchmark;
 import picocli.CommandLine;
 import smartbuffer.OptimizedNumLinkBuffer;
 import smartbuffer.SmartBuffer;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 @CommandLine.Command (name = "fbuffer", version = "Fabric buffer tester")
 public class Main implements Runnable {
@@ -109,6 +119,7 @@ public class Main implements Runnable {
     /**
      * Run a test, generating and running transactions for the set duration.
      *
+     * @param duration Time to run the simulation for (in milliseconds).
      * @param stores The number of stores.
      * @param workers The number of workers.
      * @param threads The number of threads <b>per worker</b>.
@@ -117,7 +128,13 @@ public class Main implements Runnable {
      *                store.
      * @param writeRatio The proportion of queried objects that are writes.
      */
-    private void newTest(int stores, int workers, int threads, int dbSize, RandomGenerator txnSize, float writeRatio) {
+    private Pair<List<Store>, List<Worker>> newTest(int duration,
+                         int stores,
+                         int workers,
+                         int threads,
+                         int dbSize,
+                         RandomGenerator txnSize,
+                         float writeRatio) {
         //Initialize fields
         // List of stores.
         ArrayList<Store> storelist = new ArrayList<>();
@@ -188,7 +205,7 @@ public class Main implements Runnable {
         }
         
         try {
-            Thread.sleep(DURATION);
+            Thread.sleep(duration);
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -196,13 +213,17 @@ public class Main implements Runnable {
         
         exit = true;
 
-        for (Store s : storelist){
-            System.out.println(s);
-        }
+        return new Pair<>(storelist, workerlist);
+    }
 
-        for (Worker w : workerlist) {
-            System.out.println(w);
-        }
+    // TODO: add custom CSV settings (delimiter etc) as parameter
+    private static void printRowToCSV(PrintWriter writer, CSVData data) {
+        printRowToCSV(writer, data.row());
+    }
+
+    private static void printRowToCSV(PrintWriter writer, String[] row) {
+        String rowAsText = String.join(", ", row);
+        writer.println(rowAsText);
     }
     
     /*
@@ -289,35 +310,100 @@ public class Main implements Runnable {
     }
 
     @CommandLine.Option (names = "-O", defaultValue = ".",
-            description = "Specify where to place output diagnostic files.")
+            description = "Specify where to place output diagnostic files (default: ${DEFAULT-VALUE})")
     private Path path;
 
-    @CommandLine.Option (names = {"-stores"}, description = "Number of stores")
-    private int stores = 1;
+    @CommandLine.Option (names = "-storefile", defaultValue = "stores.csv",
+            description = "File name for store benchmarks (default: ${DEFAULT-VALUE})")
+    private File storefile;
 
-    @CommandLine.Option (names = {"-workers"}, description = "Number of workers")
-    private int workers = 1;
+    @CommandLine.Option (names = "-workerfile", defaultValue = "workers.csv",
+            description = "File name for worker benchmarks (default: ${DEFAULT-VALUE})")
+    private File workerfile;
 
-    @CommandLine.Option (names = {"-threads"}, description = "Number of threads per worker")
-    private int threads = 8;
+    @CommandLine.Option (names = {"-stores"}, defaultValue = "1",
+            description = "Number of stores (default: ${DEFAULT-VALUE})")
+    private int stores;
 
-    @CommandLine.Option (names = {"-objects"}, description = "Number of objects per store")
-    private int objects = 10000;
+    @CommandLine.Option (names = {"-workers"}, defaultValue = "1",
+            description = "Number of workers (default: ${DEFAULT-VALUE})")
+    private int workers;
 
-    @CommandLine.Option (names = {"-size"}, description = "Proportion of objects queried per transaction")
-    private float txnSize = 0.001f;
+    @CommandLine.Option (names = {"-threads"}, defaultValue = "8",
+            description = "Number of threads per worker (default: ${DEFAULT-VALUE})")
+    private int threads;
 
-    @CommandLine.Option (names = {"-writeratio"}, description = "Proportion of queried objects that are writes")
-    private float writes = 0.1f;
+    @CommandLine.Option (names = {"-objects"}, defaultValue = "10000",
+            description = "Number of objects per store (default: ${DEFAULT-VALUE})")
+    private int objects;
+
+    @CommandLine.Option (names = {"-size"}, defaultValue = "0.001",
+            description = "Proportion of objects queried per transaction (default: ${DEFAULT-VALUE})")
+    private float txnSize;
+
+    @CommandLine.Option (names = {"-writeratio"}, defaultValue = "0.1",
+            description = "Proportion of queried objects that are writes (default: ${DEFAULT-VALUE})")
+    private float writes;
+
+    @CommandLine.Option (names = {"-time"}, defaultValue = "10000",
+            description = "Time to run the simulation for (default: ${DEFAULT-VALUE})")
+    private int runtime;
+
+    @CommandLine.Option (names = "-verbose",
+            description = "Print benchmark output to the console")
+    private boolean verbose = false;
 
     @Override
     public void run() {
         // testing stuff
-//        System.out.println(stores);
-//        System.out.println(workers);
-//        System.out.println(threads);
-//        System.out.println(objects);
-        (new Main()).newTest(stores, workers, threads, objects, RandomGenerator.constant(txnSize), writes);
+        if (!Files.exists(path)) {
+            System.err.println("Error: path " + path + " not found");
+            return;
+        }
+
+        String pathString = path.toString();
+        Path storesOutputPath = Paths.get(pathString, storefile.toString());
+        Path workersOutputPath = Paths.get(pathString, workerfile.toString());
+
+        try (PrintWriter storesWriter = new PrintWriter(storesOutputPath.toFile());
+             PrintWriter workersWriter = new PrintWriter(workersOutputPath.toFile())) {
+
+            Pair<List<Store>, List<Worker>> benchmarks =
+                    (new Main()).newTest(
+                            runtime,
+                            stores,
+                            workers,
+                            threads,
+                            objects,
+                            RandomGenerator.constant(txnSize),
+                            writes
+                    );
+
+            List<Store> stores = benchmarks.getFirst();
+            List<Worker> workers = benchmarks.getSecond();
+
+            // print benchmarks to sysout if requested
+            if (verbose) {
+                stores.forEach(System.out::println);
+                workers.forEach(System.out::println);
+            }
+
+            // to print a list of benchmarks to csv, we first print the header and then print each benchmark's row
+
+            List<StoreBenchmark> storeBenchmarks = stores.stream()
+                    .map(Store::getCSVData)
+                    .collect(Collectors.toList());
+            printRowToCSV(storesWriter, StoreBenchmark.header());
+            storeBenchmarks.forEach(benchmark -> printRowToCSV(storesWriter, benchmark));
+
+            List<WorkerBenchmark> workerBenchmarks = workers.stream()
+                    .map(Worker::getCSVData)
+                    .collect(Collectors.toList());
+            printRowToCSV(workersWriter, WorkerBenchmark.header());
+            workerBenchmarks.forEach(benchmark -> printRowToCSV(workersWriter, benchmark));
+        } catch (IOException e) {
+            System.err.println("Unexpected error when creating file output streams: " + e.getMessage());
+        }
     }
 
     public static void main(String[] args) {

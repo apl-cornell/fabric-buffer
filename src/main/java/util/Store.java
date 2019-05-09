@@ -1,5 +1,8 @@
 package util;
 
+import benchmark.CSVData;
+import benchmark.StoreBenchmark;
+
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -74,8 +77,9 @@ public abstract class Store {
 
     public abstract Set<Long> pendingkey();
 
-    public abstract int numLink();
+    public abstract int getNumLink();
 
+    public abstract StoreBenchmark getCSVData();
 
     /*--------------------------For testing only----------------------------*/
     

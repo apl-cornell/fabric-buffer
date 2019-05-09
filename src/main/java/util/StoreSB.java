@@ -1,5 +1,7 @@
 package util;
 
+import benchmark.CSVData;
+import benchmark.StoreBenchmark;
 import smartbuffer.SmartBuffer;
 
 import java.util.*;
@@ -199,15 +201,26 @@ public class StoreSB extends Store {
     }
 
     @Override
-    public int numLink(){
-        return buffer.numLink();
+    public int getNumLink() {
+        return buffer.getNumLink();
+    }
+
+    @Override
+    public StoreBenchmark getCSVData() {
+        return new StoreBenchmark(pending(),
+                getNumLink(),
+                numAbortLock,
+                numAbortVc,
+                buffer.getNumResolve(),
+                buffer.getNumAbortLock(),
+                buffer.getNumAbortVC());
     }
 
     @Override
     public String toString() {
         return String.format("Store has %d pending transactions %s and %d transactions in buffer. Store aborted " +
                 "%d txns because of a lock conflict and %d txns because of a version conflict. "
-                + buffer.toString(), pending(), pendingkey(), numLink(), numAbortLock, numAbortVc);
+                + buffer.toString(), pending(), pendingkey(), getNumLink(), numAbortLock, numAbortVc);
     }
 
     public int getNumAborts() {
