@@ -52,11 +52,11 @@
 In the Two-Phase Commit protocol, after a worker sends its decision of
 abort/commit to the store, the worker needs to wait for the store's reply. In
 other words, the worker is waiting for a message whose content it already knows.
-The waiting is necessary to acount for the asynchrony of rthe underlying
+The waiting is necessary to account for the asynchrony of the underlying
 communication channel. However, assuming that the communication channel is
 synchronous most of the time, the waiting is unnecessary most of the time.
 
-If the worker does not block on the reply of the store, fter sending out the
+If the worker does not block on the reply of the store, after sending out the
 commit message for a transaction, the worker can start an new transaction that
 depends on the previous transaction immediately. From the worker's point of
 view, this is a 1.5-Phase Commit. However, the messages may arrive the store in
@@ -88,7 +88,7 @@ $o$.
 
 One option is to make $s$ abort the prepare for $t_2$. However, if $s$ receives
 the messages in an order the same as $w$ sends them, the prepare of $t_2$ won't
-fail because of the unknown version $v$ of $o$. Thus, insteand of directly
+fail because of the unknown version $v$ of $o$. Thus, instead of directly
 aborting the prepare of $t_2$, $s$ should wait until it receives the commit
 message of $t_1$ and updates $o$ to version $v$, and then start the prepare of
 $t_2$. Thus, the data structure needs to allow the store block transaction
@@ -103,10 +103,22 @@ version of $o$ and $v' > v$, the prepare of $t$ will always fail because of
 version conflict. Then, the prepare of $t$ should be aborted immediately even if
 the store $s$ has not seen the newer version of $o$. 
 
-Thus, the data structure nees to allow the store aborts pending transaction
+Thus, the data structure needs to allow the store aborts pending transaction
 prepare as soon as version conflicts happen.
 
 \subsection{Smart Buffer Design}
+The design of Smart Buffer is inspired by the dependency structure in COPS. The
+dependencies of each transaction in Smart Buffer are versions of objects that 
+the transaction reads. Similar to COPS, when all dependencies are resolve, the
+transaction is ready to be prepared.
+
+Transactions that need some versions of objects unknown to
+the store to be prepared are added to the Smart Buffer. Each transaction is mapped 
+to a set of objects with corresponding versions that the transaction depends on. 
+If all objects are known to the store, the transaction is ready to be prepared. 
+If a version conflict happens before all objects are known, the transaction needs 
+to be aborted.
+
 The Smart Buffer interface has three methods: $\mathtt{add}$, $\mathtt{remove}$
 and $\mathtt{delete}$.
 \begin{itemize}
@@ -117,33 +129,73 @@ and $\mathtt{delete}$.
   \item $\mathtt{remove(object)}$: $\mathtt{object}$ is some version of an
   object. The method let the buffer know this version of an object is known to
   the store.
-  \item $\mathtt{delete(tid)}$: $\mathtt{tid}$ is hte ID of a transaction. The
+  \item $\mathtt{delete(tid)}$: $\mathtt{tid}$ is the ID of a transaction. The
   method deletes the transaction with $tid$ from the buffer.
 \end{itemize}
-For transactions in the buffer, if version conflicts happen before all objects
-the transaction read are known to the store, the buffer will notify the store to
-abort the transaction. If all objects the transaction read are known to the
-store, the buffer will notify the store the store to prepare for the transaction
-again.
+Buffer notifies the store when it is able to decide that a transaction is ready to be
+prepared or a transaction needs to be aborted. Transactions are considered to be 
+pending if the buffer has not notified the store about its status. 
 
 \subsection{Smart Buffer's Usage in the Store}
 When the store receives a transaction prepare message, it tries to prepare for
-the transaction. If the perpare does not contain version conflict and has some
+the transaction. If the prepare does not contain version conflict and has some
 version of an object newer than the version the store has, the store adds the
 transaction and the objects it read to the buffer. 
 
 When the store receives a transaction commit message, for each object the commit
 updates, the store remove the object from the buffer. 
 
-When the buffer notify the store to perpare for some transaction, the store
+When the buffer notify the store to prepare for some transaction, the store
 starts the prepare for the transaction again and notifies the worker of the
 result of the prepare. When the buffer notify the store to abort some
 transaction, the store aborts the transaction and notifies the worker of the
 result.
 
+\subsection{Invariants}
+\label{sec:inv}
+For each object $o$, at most two versions of $o$ are depended on by some pending
+transaction in Smart Buffer. Let the version of $o$ that the store holds to be $v$. 
+If a transaction wants to read version $v'$ of $o$ and $v' < v$, the transaction 
+has version conflicts and won't be added to the buffer. If a transaction wants to
+read version $v'$ of $o$ and $v' \geq v + 2$, there exists a transaction $t$ that 
+reads $v + 1$ of $o$ and writes $v + 2$ of $o$ and $t$ has been prepared successfully.
+Then, the store must have known $v + 1$ of $o$, which is a contradiction. Therefore,
+at most two versions $o$ are depended on by some pending transaction in Smart Buffer,
+and the two versions are $v$ and $v + 1$.
+
+\subsection{Proof of Serializability}
+Given transactions $t_1$ and $t_2$, assume that both $t_1$ and $t_2$ commits. If $t_2$
+reads some object that $t_1$ writes, the smart buffer ensures that $t_2$ prepares 
+successfully only after the store has the version of the object that $t_1$ writes. 
+Store knows the version of the object that $t_1$ writes only after $t_1$ commits successfully.
+Thus, $t_2$ prepares successfully after $t_1$ commits successfully. Since $t_2$'s prepare
+must be completed before $t_2$ commits, $t_2$ commits successfully after $t_1$ commits
+successfully. Therefore, all updates that $t_2$ perform happen after all updates that $t_1$ perform.
+Therefore, for any two transactions $t_1$ and $t_2$ that completes successfully, if $t_2$
+depends on $t_1$, $t_2$ happens after $t_1$. Hence, serializability is ensured.
+
 \section{Implementation}
 \label{sec:implementation}
 \subsection{NumLinkBuffer}
+NumLinkBuffer is an implementation of the SmartBuffer interface. It contains
+$\mathtt{depsMap}$ which maps some version of an object known to the store 
+to the IDs of transactions that depend on that version and $\mathtt{unresolveddepsMap}$ 
+which maps some version of an object unknown to the store to the IDs of
+transactions that depend on that version. It also contains $\mathtt{numLink}$
+which maps a transaction to the number of objects unknown to the store. 
+
+Besides the invariant mentioned in Section \ref{sec:inv}, another invariant is 
+maintained in this implementation that a transaction is pending if and only if 
+it is in $\mathtt{numLink}$.
+
+NumLinkBuffer also has locks for each object and for each transaction. These locks are
+utilized to ensure proper ordering of updates of fields of the buffer.
+
+
+
+\subsection{Testing Tool for 2PC}
+
+\subsection{Fabric}
 
 \section{Performance}
 \label{sec:performance}
