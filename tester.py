@@ -1,7 +1,9 @@
 import csv
 import errno
 import itertools
+import functools
 import json
+import operator
 import os
 import subprocess
 import sys
@@ -45,16 +47,20 @@ parameters, values = zip(*data.items())
 
 output_data = []
 
-# counter for testing, used to limit the number of runs
+# loop counter
 i = 0
+
+# total combinations
+total = functools.reduce(operator.mul, map(len, values), 1)
+
 for value_combination in itertools.product(*values):
-    if i == 3:
+    if i == 3:  # TODO: remove after testing is done
         break
     param_string = cli_param_string(parameters, value_combination)
     cmd = './fbuffer %s' % param_string
 
     # this is a blocking call, since we need to wait for the process to finish
-    print('Running test: %s' % cmd)
+    print('Running test %d of %d: %s' % (i + 1, total, cmd))
     subprocess.call(cmd, shell=True)
     print('Test finished, collecting results...')
 
