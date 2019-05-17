@@ -1,12 +1,19 @@
 import csv
-import json
+import errno
 import itertools
+import json
+import os
 import subprocess
-from os.path import devnull
+import sys
 from pprint import pprint
 
 WORKER_OUT_FILE = "workers.csv"
 STORE_OUT_FILE = "stores.csv"
+try:
+    OUT_FILE = sys.argv[1]
+except IndexError:
+    print("Error: output file not provided")
+    sys.exit(1)
 
 
 def scalar_to_iterable(s):
@@ -36,6 +43,8 @@ data = {
 
 parameters, values = zip(*data.items())
 
+output_data = []
+
 # counter for testing, used to limit the number of runs
 i = 0
 for value_combination in itertools.product(*values):
@@ -52,7 +61,25 @@ for value_combination in itertools.product(*values):
     workers = csv_to_dicts(WORKER_OUT_FILE, delimiter=',')
     stores = csv_to_dicts(STORE_OUT_FILE, delimiter=',')
 
-    # TODO: do something with the data
-    pprint(workers)
-    pprint(stores)
+    output_data.append({
+        "args": {
+            param: arg for param, arg in zip(parameters, value_combination)
+        },
+        "workers": workers,
+        "stores": stores
+    })
     i += 1
+
+pprint(output_data)
+
+dirname = os.path.dirname(OUT_FILE)
+if dirname != '' and not os.path.exists(dirname):
+    try:
+        os.makedirs(os.path.dirname(OUT_FILE))
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
+with open(OUT_FILE, 'w+') as f:
+    json.dump(output_data, f, indent=4)
+
