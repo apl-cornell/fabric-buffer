@@ -56,8 +56,6 @@ extra_params = "-storefile=%s -workerfile=%s" \
                % (STORE_OUT_FILE, WORKER_OUT_FILE)
 
 for value_combination in itertools.product(*values):
-    if i == 3:  # TODO: remove after testing is done
-        break
     param_string = cli_param_string(parameters, value_combination)
     cmd = './fbuffer %s %s' % (param_string, extra_params)
 
