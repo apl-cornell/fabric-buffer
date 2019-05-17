@@ -52,12 +52,14 @@ i = 0
 
 # total combinations
 total = functools.reduce(operator.mul, map(len, values), 1)
+extra_params = "-storefile=%s -workerfile=%s" \
+               % (STORE_OUT_FILE, WORKER_OUT_FILE)
 
 for value_combination in itertools.product(*values):
     if i == 3:  # TODO: remove after testing is done
         break
     param_string = cli_param_string(parameters, value_combination)
-    cmd = './fbuffer %s' % param_string
+    cmd = './fbuffer %s %s' % (param_string, extra_params)
 
     # this is a blocking call, since we need to wait for the process to finish
     print('Running test %d of %d: %s' % (i + 1, total, cmd))
