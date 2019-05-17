@@ -222,7 +222,7 @@ public class Main implements Runnable {
     }
 
     private static void printRowToCSV(PrintWriter writer, String[] row) {
-        String rowAsText = String.join(", ", row);
+        String rowAsText = String.join(",", row);
         writer.println(rowAsText);
     }
     
