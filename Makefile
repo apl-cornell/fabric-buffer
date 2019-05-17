@@ -9,3 +9,6 @@ help:
 build: ## Build the CLI
 	./gradlew --no-daemon customFatJar
 	cat make_jar_executable.sh build/libs/all-in-one-jar-1.0-SNAPSHOT.jar > fbuffer && chmod +x fbuffer
+
+test: ## Run the test script
+	python tester.py
