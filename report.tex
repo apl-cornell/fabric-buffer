@@ -196,6 +196,17 @@ utilized to ensure proper ordering of updates of fields of the buffer.
 \subsection{Testing Tool for 2PC}
 
 \subsection{Fabric}
+We have also implemented NumLinkBuffer in Fabric. The buffer is associated with
+each database, and the database interacts with the buffer when it performs prepare,
+commit and abort.
+
+To maintain the original structure of transaction handling in Fabric, the buffer
+is restricted to minimal functionality. The smart buffer only tracks unresolved
+dependencies of transactions. The status of pending transaction is returned to
+the store by attaching a $\mathtt{Future}$ to
+$\mathtt{TransactionPrepareFailedException}$. The store is responsible for
+contacting the workers or starting the prepare again depending on the status
+returned.
 
 \section{Performance}
 \label{sec:performance}
