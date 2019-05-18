@@ -277,9 +277,17 @@ script), but there are some trends in the data. The total number of completed
 transactions decreased when any of the current parameters are increased. The
 total number of transactions aborted by the stores increased in general as the
 number of workers and stores increased. There may be some unnecessary overhead
-in our current implementation, so we will try to optimize it. We've not yet had
-the opportunity to run a control group without the buffer, or using the original
-2PC algorithm.
+in our current implementation, so we will try to optimize it. In general, a lot
+more transactions were aborted because of a version conflict than a locking
+conflict (on the store side).
 
+We found that when the home-store and remote-store delays are both 0, the
+original 2PC algorithm performs better than our version. This is most likely
+because the overhead of the buffer is bigger than the benefit of having it. Our
+testing so far suggests that increasing the store delays will reverse this, as
+the buffer's benefit increases due to the increased cost of having synchronous
+transactions. We have not had the opportunity to confirm this with extensive
+stress testing (in the same way as we tested without any delays), but this will
+likely be fairly straightforward.
 
 \end{document}
