@@ -222,7 +222,7 @@ public class Main implements Runnable {
     }
 
     private static void printRowToCSV(PrintWriter writer, String[] row) {
-        String rowAsText = String.join(", ", row);
+        String rowAsText = String.join(",", row);
         writer.println(rowAsText);
     }
     
@@ -369,7 +369,7 @@ public class Main implements Runnable {
              PrintWriter workersWriter = new PrintWriter(workersOutputPath.toFile())) {
 
             Pair<List<Store>, List<Worker>> benchmarks =
-                    (new Main()).newTest(
+                    this.newTest(
                             runtime,
                             stores,
                             workers,
