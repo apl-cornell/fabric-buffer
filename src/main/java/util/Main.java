@@ -309,6 +309,9 @@ public class Main implements Runnable {
         }
     }
 
+    @CommandLine.Option (names = {"-h", "--help"}, usageHelp = true, description = "Print a synopsis of options.")
+    private boolean optHelp = false;
+
     @CommandLine.Option (names = "-O", defaultValue = ".",
             description = "Specify where to place output diagnostic files (default: ${DEFAULT-VALUE})")
     private Path path;

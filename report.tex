@@ -11,6 +11,12 @@
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
 \usepackage{lipsum}
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
 
 \title{Smart Buffer Project Report}
 
@@ -194,27 +200,60 @@ utilized to ensure proper ordering of updates of fields of the buffer.
 
 
 \subsection{Testing Tool for 2PC}
-In order to test the performance of the smart buffer in an enviroment easy to
+In order to test the performance of the smart buffer in an environment easy to
 tune and reason about, we implemented a toy model of 2PC. The model contains
 stores, workers, transactions and locks similar to the actual ones in real world
 distributed setting, except for that principals communicate through inter-thread
-communication and function calls. Moreover, objects do not have actual value but
-do have version number.
+communication and function calls. Store objects don't contain any value - they
+are just representations of objects on an abstract level; to that end, they
+contain version numbers.
 
 A smart buffer is associated with each store. The store interacts with the
 buffer when processing transaction prepare and commit. The buffer tracks pending
 transactions. When the status of a pending transaction is determined, the buffer
-finishs the rest of the prepare phase, including grabbing locks on the store side
-and communicating the prepare result to workers. 
+finishes the rest of the prepare phase, including grabbing locks on the store
+side and communicating the prepare result to workers.
 
 This toy model has several parameters that can be tuned to simulate different
 real world settings, including number of stores, number of workers, number of
 threads per worker, number of objects/writes/reads per transaction and network
 delay between stores and workers. The toy model tracks the number of
 transactions committed and the number of transactions aborted because of
-different reasons. We also designed a script that can run the testing using
-parameters from a grid input by the user. This 2PC simulator can be used to
-testing other 2PC protocol optimization schema.
+different reasons. The toy model can be run using a CLI that allows you to
+specify the values for the different parameters, and the time to run the model
+for.
+
+We also designed a script that can run the testing using parameters from a grid
+specified by the user. This 2PC simulator can be used to test other 2PC protocol
+optimization schemas.
+
+The CLI has the following schema:
+
+\begin{lstlisting}[
+  basicstyle=\small, %or \small or \footnotesize etc.
+]
+Usage: fbuffer [-h] [-verbose] [-O=<path>] [-objects=<objects>]
+[-size=<txnSize>] [-storefile=<storefile>] [-stores=<stores>]
+[-threads=<threads>] [-time=<runtime>]
+[-workerfile=<workerfile>] [-workers=<workers>]
+[-writeratio=<writes>]
+-h, --help                 Print a synopsis of options.
+-O=<path>                  Specify where to place output diagnostic files
+(default: .)
+-objects=<objects>     Number of objects per store (default: 10000)
+-size=<txnSize>        Proportion of objects queried per transaction (default:
+0.001)
+-storefile=<storefile> File name for store benchmarks (default: stores.csv)
+-stores=<stores>       Number of stores (default: 1)
+-threads=<threads>     Number of threads per worker (default: 8)
+-time=<runtime>        Time to run the simulation for (default: 10000)
+-verbose               Print benchmark output to the console
+-workerfile=<workerfile>
+File name for worker benchmarks (default: workers.csv)
+-workers=<workers>     Number of workers (default: 1)
+-writeratio=<writes>   Proportion of queried objects that are writes (default:
+0.1)
+\end{lstlisting}
 
 
 \subsection{Fabric}
@@ -232,5 +271,7 @@ returned.
 
 \section{Performance}
 \label{sec:performance}
+
+
 
 \end{document}
