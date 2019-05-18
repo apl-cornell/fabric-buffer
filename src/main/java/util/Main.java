@@ -57,16 +57,6 @@ public class Main implements Runnable {
     private static final int NUM_THREAD = 8;
 
     /**
-     * Time interval for communicating with stores other than the home store.
-     */
-    private static final int NON_HOME_INV = 0;
-
-    /**
-     * Time interval for communicating with the home store.
-     */
-    private static final int HOME_INV = 0;
-
-    /**
      * Intervals for worker to start a new txn. Only used when WORKER_CONCUR is
      * true.
      */
@@ -127,14 +117,18 @@ public class Main implements Runnable {
      * @param txnSize The number of objects in each transaction, as a proportion of the total number of objects in each
      *                store.
      * @param writeRatio The proportion of queried objects that are writes.
+     * @param homeInterval Time taken for a worker to communicate with the home store.
+     * @param remoteInterval Time taken for a worker to communicate with a remote store.
      */
     private Pair<List<Store>, List<Worker>> newTest(int duration,
-                         int stores,
-                         int workers,
-                         int threads,
-                         int dbSize,
-                         RandomGenerator txnSize,
-                         float writeRatio) {
+                                                    int stores,
+                                                    int workers,
+                                                    int threads,
+                                                    int dbSize,
+                                                    RandomGenerator txnSize,
+                                                    float writeRatio,
+                                                    int homeInterval,
+                                                    int remoteInterval) {
         //Initialize fields
         // List of stores.
         ArrayList<Store> storelist = new ArrayList<>();
@@ -177,7 +171,7 @@ public class Main implements Runnable {
         //Initialize workers
         for (int i = 0; i < workers; i++) {
             int storeindex = (int)(1.0 * i / workers * stores);
-            Worker worker = new Worker(i, storelist, WORKER_CONCUR, ORIGINAL, lastversion, location, threads, storelist.get(storeindex), HOME_INV, NON_HOME_INV);
+            Worker worker = new Worker(i, storelist, WORKER_CONCUR, ORIGINAL, lastversion, location, threads, storelist.get(storeindex), homeInterval, remoteInterval);
             workerlist.add(worker);
             TxnGenerator txngen;
             txngen = new TxnGenerator(worker, txnSize, writeRatio, TXN_QUEUE_CAPACITY, last_unused_oid);
@@ -352,6 +346,14 @@ public class Main implements Runnable {
             description = "Time to run the simulation for (default: ${DEFAULT-VALUE})")
     private int runtime;
 
+    @CommandLine.Option (names = {"-interval-home"}, defaultValue = "0",
+            description = "Time taken for a worker to communicate with the home store (default: ${DEFAULT-VALUE})")
+    private int homeInterval;
+
+    @CommandLine.Option (names = {"-interval-remote"}, defaultValue = "0",
+            description = "Time taken for a worker to communicate with a remote store (default: ${DEFAULT-VALUE})")
+    private int remoteInterval;
+
     @CommandLine.Option (names = "-verbose",
             description = "Print benchmark output to the console")
     private boolean verbose = false;
@@ -379,7 +381,9 @@ public class Main implements Runnable {
                             threads,
                             objects,
                             RandomGenerator.constant(txnSize),
-                            writes
+                            writes,
+                            homeInterval,
+                            remoteInterval
                     );
 
             List<Store> stores = benchmarks.getFirst();
