@@ -76,8 +76,6 @@ for value_combination in itertools.product(*values):
     })
     i += 1
 
-pprint(output_data)
-
 dirname = os.path.dirname(OUT_FILE)
 if dirname != '' and not os.path.exists(dirname):
     try:
