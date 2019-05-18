@@ -1,13 +1,12 @@
 import csv
 import errno
-import itertools
 import functools
+import itertools
 import json
 import operator
 import os
 import subprocess
 import sys
-from pprint import pprint
 
 WORKER_OUT_FILE = "workers.csv"
 STORE_OUT_FILE = "stores.csv"
@@ -51,16 +50,23 @@ output_data = []
 i = 0
 
 # total combinations
-total = functools.reduce(operator.mul, map(len, values), 1)
+total_combinations = functools.reduce(operator.mul, map(len, values), 1)
 extra_params = "-storefile=%s -workerfile=%s" \
                % (STORE_OUT_FILE, WORKER_OUT_FILE)
+
+times = data['time']
+total_time = sum(map(lambda t: t * total_combinations / len(times), times))
+hours = (total_time / (1000 * 60 * 60)) % 24
+minutes = (total_time / (1000 * 60)) % 60
+print('Starting run of %d combinations. Approximate runtime is %d hours and %d minutes.'
+      % (total_combinations, hours, minutes))
 
 for value_combination in itertools.product(*values):
     param_string = cli_param_string(parameters, value_combination)
     cmd = './fbuffer %s %s' % (param_string, extra_params)
 
     # this is a blocking call, since we need to wait for the process to finish
-    print('Running test %d of %d: %s' % (i + 1, total, cmd))
+    print('Running test %d of %d: %s' % (i + 1, total_combinations, cmd))
     subprocess.call(cmd, shell=True)
     print('Test finished, collecting results...')
 
