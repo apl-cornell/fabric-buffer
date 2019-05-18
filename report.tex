@@ -194,11 +194,33 @@ utilized to ensure proper ordering of updates of fields of the buffer.
 
 
 \subsection{Testing Tool for 2PC}
+In order to test the performance of the smart buffer in an enviroment easy to
+tune and reason about, we implemented a toy model of 2PC. The model contains
+stores, workers, transactions and locks similar to the actual ones in real world
+distributed setting, except for that principals communicate through inter-thread
+communication and function calls. Moreover, objects do not have actual value but
+do have version number.
+
+A smart buffer is associated with each store. The store interacts with the
+buffer when processing transaction prepare and commit. The buffer tracks pending
+transactions. When the status of a pending transaction is determined, the buffer
+finishs the rest of the prepare phase, including grabbing locks on the store side
+and communicating the prepare result to workers. 
+
+This toy model has several parameters that can be tuned to simulate different
+real world settings, including number of stores, number of workers, number of
+threads per worker, number of objects/writes/reads per transaction and network
+delay between stores and workers. The toy model tracks the number of
+transactions committed and the number of transactions aborted because of
+different reasons. We also designed a script that can run the testing using
+parameters from a grid input by the user. This 2PC simulator can be used to
+testing other 2PC protocol optimization schema.
+
 
 \subsection{Fabric}
 We have also implemented NumLinkBuffer in Fabric. The buffer is associated with
-each database, and the database interacts with the buffer when it performs prepare,
-commit and abort.
+each database, and the database interacts with the buffer when it performs
+prepare, commit and abort.
 
 To maintain the original structure of transaction handling in Fabric, the buffer
 is restricted to minimal functionality. The smart buffer only tracks unresolved
