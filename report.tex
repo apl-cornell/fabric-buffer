@@ -115,7 +115,7 @@ prepare as soon as version conflicts happen.
 \subsection{Smart Buffer Design}
 The design of Smart Buffer is inspired by the dependency structure in COPS. The
 dependencies of each transaction in Smart Buffer are versions of objects that 
-the transaction reads. Similar to COPS, when all dependencies are resolve, the
+the transaction reads. Similar to COPS, when all dependencies are resolved, the
 transaction is ready to be prepared.
 
 Transactions that need some versions of objects unknown to
@@ -188,14 +188,14 @@ $\mathtt{depsMap}$ which maps some version of an object known to the store
 to the IDs of transactions that depend on that version and $\mathtt{unresolveddepsMap}$ 
 which maps some version of an object unknown to the store to the IDs of
 transactions that depend on that version. It also contains $\mathtt{numLink}$
-which maps a transaction to the number of objects unknown to the store. 
+which maps a transaction to the number of its dependencies unknown to the store. 
 
 Besides the invariant mentioned in Section \ref{sec:inv}, another invariant is 
 maintained in this implementation that a transaction is pending if and only if 
 it is in $\mathtt{numLink}$.
 
-NumLinkBuffer also has locks for each object and for each transaction. These locks are
-utilized to ensure proper ordering of updates of fields of the buffer.
+NumLinkBuffer also has locks for each object and for each transaction. These
+locks are utilized to ensure proper ordering of updates of fields of the buffer.
 
 
 
@@ -272,6 +272,10 @@ returned.
 \section{Performance}
 \label{sec:performance}
 
-
+\subsection{Future Plans on Performance Testing}
+\begin{enumerate}
+  \item Add control group.
+  \item Add network delay and 
+\end{enumerate}
 
 \end{document}
