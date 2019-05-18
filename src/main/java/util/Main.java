@@ -77,7 +77,7 @@ public class Main implements Runnable {
     /**
      * If true, run the testing with original 2PC protocol.
      */
-    private static final boolean ORIGINAL = true;
+    private static final boolean ORIGINAL = false;
 
     /*-----------------------------------Txn Generator Configuration-----------------------------------*/
     /**
