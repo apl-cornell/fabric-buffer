@@ -271,6 +271,31 @@ returned.
 
 \section{Performance}
 \label{sec:performance}
+\subsection{Sources of Overhead}
+To track dependencies and version conflicts of pending transactions, the current
+design of smart buffer needs to store all objects a pending transaction reads. 
+For each worker, the number of pending transaction is less than or equal to the
+number of transactions a worker can start concurrently. Thus, for each store,
+the space overhead of the smart buffer is $O($ \# of workers * \# of transactions
+each worker can start * \# of objects a transaction reads$)$. 
+
+The $\mathtt{add}$ method takes $O($ \# of objects the transaction reads$)$. The
+$\mathtt{remove}$ method removes every transaction in the buffer that depends on
+an object. The maximum number of transactions depending on an unknown version of
+an object is the number of transactions each worker can start. Thus,
+$\mathtt{remove}$ takes $O($\#of transactions each worker can start$)$.
+
+A simpler way to handle unknown objects is message passing. The store sends a
+message to the worker when it sees some unknown object and notifies the worker
+again when it receives the commit message about that unknown object. Since the
+smart buffer handles unknown objects locallhy, we expect the smart buffer
+outperforms this message passing solution as network latency becomes larger.
+
+\subsection{Testing}
+To perform testing, we designed a random transaction generator in our 2PC model.
+Each worker is associated with a transaction generator, and the transaction 
+generator feeds transactions randomly generated based on parameters set by the
+user to the worker.
 
 So far, we have a rather limited data set (we are still working on the test
 script), but there are some trends in the data. The total number of completed
@@ -280,6 +305,15 @@ number of workers and stores increased. There may be some unnecessary overhead
 in our current implementation, so we will try to optimize it. We've not yet had
 the opportunity to run a control group without the buffer, or using the original
 2PC algorithm.
+
+We found that when the home-store and remote-store delays are both 0, the
+original 2PC algorithm performs better than our version. This is most likely
+because the overhead of the buffer is bigger than the benefit of having it. Our
+testing so far suggests that increasing the store delays will reverse this, as
+the buffer’s benefit increases due to the increased cost of having synchronous
+transactions. We have not had the opportunity to confirm this with extensive
+stress testing (in the same way as we tested without any delays), but this will
+likely be fairly straightforward.
 
 
 \end{document}
