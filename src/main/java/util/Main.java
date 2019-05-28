@@ -23,25 +23,6 @@ import java.util.stream.Collectors;
 @CommandLine.Command (name = "fbuffer", version = "Fabric buffer tester")
 public class Main implements Runnable {
     /*--------------------------------------General Configuration-------------------------------------*/
-    /**
-     * Number of stores.
-     */
-    private static final int STORE_NUM = 2;
-    
-    /**
-     * Number of workers.
-     */
-    private static final int WORKER_NUM = 1;
-
-    /**
-     * Duration of the test.
-     */
-    private static final int DURATION = 10000;
-
-    /**
-     * Initial number of objects per store.
-     */
-    private static final int INITIAL_CAPACITY = 10000;
 
     /*--------------------------------------Store Configuration--------------------------------------*/
     /**
@@ -51,11 +32,6 @@ public class Main implements Runnable {
     private static final boolean WITH_BUFFER = true;
 
     /*--------------------------------------Worker Configuration--------------------------------------*/
-    /**
-     * Number of worker threads
-     */
-    private static final int NUM_THREAD = 8;
-
     /**
      * Intervals for worker to start a new txn. Only used when WORKER_CONCUR is
      * true.
@@ -73,11 +49,6 @@ public class Main implements Runnable {
      * transaction is being prepared.
      */
     private static final boolean WORKER_CONCUR = true;
-
-    /**
-     * If true, run the testing with original 2PC protocol.
-     */
-    private static final boolean ORIGINAL = false;
 
     /*-----------------------------------Txn Generator Configuration-----------------------------------*/
     /**
@@ -109,6 +80,8 @@ public class Main implements Runnable {
     /**
      * Run a test, generating and running transactions for the set duration.
      *
+     * @param optimized Whether to run the original 2PC algorithm ({@code true}) or the 1.5PC optimized version
+     *                  ({@code false}).
      * @param duration Time to run the simulation for (in milliseconds).
      * @param stores The number of stores.
      * @param workers The number of workers.
@@ -120,7 +93,8 @@ public class Main implements Runnable {
      * @param homeInterval Time taken for a worker to communicate with the home store.
      * @param remoteInterval Time taken for a worker to communicate with a remote store.
      */
-    private Pair<List<Store>, List<Worker>> newTest(int duration,
+    private Pair<List<Store>, List<Worker>> newTest(boolean optimized,
+                                                    int duration,
                                                     int stores,
                                                     int workers,
                                                     int threads,
@@ -171,7 +145,7 @@ public class Main implements Runnable {
         //Initialize workers
         for (int i = 0; i < workers; i++) {
             int storeindex = (int)(1.0 * i / workers * stores);
-            Worker worker = new Worker(i, storelist, WORKER_CONCUR, ORIGINAL, lastversion, location, threads, storelist.get(storeindex), homeInterval, remoteInterval);
+            Worker worker = new Worker(i, storelist, WORKER_CONCUR, !optimized, lastversion, location, threads, storelist.get(storeindex), homeInterval, remoteInterval);
             workerlist.add(worker);
             TxnGenerator txngen;
             txngen = new TxnGenerator(worker, txnSize, writeRatio, TXN_QUEUE_CAPACITY, last_unused_oid);
@@ -306,6 +280,11 @@ public class Main implements Runnable {
     @CommandLine.Option (names = {"-h", "--help"}, usageHelp = true, description = "Print a synopsis of options.")
     private boolean optHelp = false;
 
+    @CommandLine.Option (names = {"-opt"}, defaultValue = "true",
+            description = "Specify whether to use the optimized 1.5PC protocol " +
+                    "rather than the regular 2PC (default: ${DEFAULT-VALUE})")
+    private boolean optimized;
+
     @CommandLine.Option (names = "-O", defaultValue = ".",
             description = "Specify where to place output diagnostic files (default: ${DEFAULT-VALUE})")
     private Path path;
@@ -375,6 +354,7 @@ public class Main implements Runnable {
 
             Pair<List<Store>, List<Worker>> benchmarks =
                     this.newTest(
+                            optimized,
                             runtime,
                             stores,
                             workers,
